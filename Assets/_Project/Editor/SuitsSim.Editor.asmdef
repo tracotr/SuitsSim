@@ -1,0 +1,15 @@
+{
+    "name": "SuitsSim.Editor",
+    "rootNamespace": "SuitsSim.EditorTools",
+    "references": [
+        "SuitsSim"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "autoReferenced": false,
+    "noEngineReferences": false
+}
