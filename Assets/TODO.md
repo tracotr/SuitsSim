@@ -10,18 +10,20 @@ Reference: FY27 Mission Description, `TSS2026/documents/telemetry_ranges/eva-tel
 ## Phase 1 — Scene foundation
 Goal: stand at the lander in VR with the TSS running.
 
-- [ ] XR Origin Hands rig (XRI Hands Interaction Demo sample)
-  - [ ] Install XR Hands package
-  - [ ] OpenXR features: Hand Tracking Subsystem, Meta Hand Tracking Aim, Hand Interaction Profile
-  - [ ] Tracking Origin Mode = Floor, XR Origin scale = 1
-- [ ] `TSS` GameObject with `SimTss` (`startOnPlay` off — EVA starts after egress)
-- [ ] `ImuFeed` with `head` = Main Camera
-- [ ] Graybox lander at Unity origin, with airlock door and a wall for the UIA
-- [ ] Script Execution Order: `SimTss` before default
-- [ ] Movement (no controllers)
-  - [ ] Room-scale walking
-  - [ ] Hand-gesture teleport: Teleportation Area on terrain, projectile ray on one hand, shown only while holding a pose (XR Hands Gestures sample), pinch to teleport
-  - [ ] Cap teleport distance to a few metres so breadcrumbs and EVA time stay meaningful
+- [x] XR Origin Hands rig (XRI Hands Interaction Demo sample)
+  - [x] Install XR Hands package
+  - [x] OpenXR features: Hand Tracking Subsystem, Meta Hand Tracking Aim (no Hand Interaction Profile: double aim source over Link)
+  - [x] Tracking Origin Mode = Floor, XR Origin scale = 1
+- [x] `TSS` GameObject with `SimTss` (`startOnPlay` off — EVA starts after egress)
+- [x] `ImuFeed` with `head` = Main Camera
+- [x] Graybox lander at Unity origin, with airlock door and a wall for the UIA
+- [x] Script Execution Order: `SimTss` before default
+- [x] Movement (no controllers)
+  - [x] Room-scale walking
+  - [x] Hand-gesture teleport: Teleportation Area on terrain, projectile ray on one hand, shown only while holding a pose (XR Hands Gestures sample), pinch to teleport
+    - Line renderers need a URP material (Single Pass Instanced draws legacy shaders in one eye only)
+    - Rig teleport Release Threshold 0.2 (stock 0.01 lags over Link)
+  - [X] Cap teleport distance to a few metres so breadcrumbs and EVA time stay meaningful
 
 **Done when:** play mode loads clean, hands are visible, you can move around, SimTss › Self Test logs "passed".
 

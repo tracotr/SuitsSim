@@ -14,6 +14,7 @@ using UnityEngine;
 /// Telemetry updates once per second. The behavior (rates, formulas, error handling)
 /// matches the real TSS, including its odd spots, so values look like the real stream.
 /// </summary>
+[DefaultExecutionOrder(-100)]
 public class SimTss : MonoBehaviour
 {
     /// <summary>Suit faults that can be injected.</summary>
