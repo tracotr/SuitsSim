@@ -1,98 +1,97 @@
-using Newtonsoft.Json.Linq;
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
 using UnityEngine.XR.Interaction.Toolkit.Interactors;
 
-// Poke toggle on a sprung hinge. While the fingertip pushes the lever, the hinge spring
-// targets the finger; on release it targets whichever end the lever is closest to.
+
 [RequireComponent(typeof(HingeJoint), typeof(XRSimpleInteractable))]
 public class TssToggle : MonoBehaviour
 {
-    public int command = 2001;
-    public string jsonPath = "uia.eva1_power";
+    public TssSwitch sw = TssSwitch.UiaEva1Power;
     public Vector3 leverDirection = Vector3.left; // which way the lever points, in Pivot's local space
     public float throwAngle = 30f;                // must match the hinge limits
     public float deadband = 3f;                   // degrees past center before it counts as flipped
     public float grace = 0.15f;                   // seconds to keep contact if hover flickers
     public AudioSource click;
 
-    HingeJoint hinge;
-    XRSimpleInteractable interactable;
-    Quaternion restRot;
-    Vector3 restPos;
-    Transform finger;
-    float prevF, target, lostAt = -1f;
-    bool on;
+    [SerializeField] private HingeJoint hinge;
+    [SerializeField] private XRSimpleInteractable interactable;
+    private Quaternion _restRot;
+    private Vector3 _restPos;
+    private Transform _finger;
+    private float _prevF, _target, _lostAt = -1f;
+    private bool _on;
 
-    void Awake()
+    private void Awake()
     {
-        hinge = GetComponent<HingeJoint>();
-        interactable = GetComponent<XRSimpleInteractable>();
-        restRot = transform.localRotation;
-        restPos = transform.localPosition;
-        target = -throwAngle;
+        _restRot = transform.localRotation;
+        _restPos = transform.localPosition;
+        _target = -throwAngle;
 
         interactable.hoverEntered.AddListener(a =>
         {
             if (a.interactorObject is not XRPokeInteractor) return;
-            finger = a.interactorObject.GetAttachTransform(interactable);
-            prevF = FingerAngle();
-            lostAt = -1f;
+            _finger = a.interactorObject.GetAttachTransform(interactable);
+            _prevF = FingerAngle();
+            _lostAt = -1f;
         });
         interactable.hoverExited.AddListener(a =>
         {
-            if (a.interactorObject is XRPokeInteractor) lostAt = Time.time;
+            if (a.interactorObject is XRPokeInteractor) _lostAt = Time.time;
         });
     }
 
-    void Start() => SimTss.Instance.Ticked += ReadBack;
-    void OnDestroy() { if (SimTss.Instance) SimTss.Instance.Ticked -= ReadBack; }
+    private void Start()
+    {
+        _on = TssSim.Instance.GetSwitch(sw);
+        TssSim.Instance.SwitchChanged += ReadBack;
+    }
+    
+    private void OnDestroy() { if (TssSim.Instance) TssSim.Instance.SwitchChanged -= ReadBack; }
 
     // Fingertip angle around the hinge, measured the same way as hinge.angle.
-    float FingerAngle()
+    private float FingerAngle()
     {
-        var p = transform.parent.InverseTransformPoint(finger.position) - restPos;
-        var axis = restRot * hinge.axis;
-        var rest = restRot * leverDirection;
+        var p = transform.parent.InverseTransformPoint(_finger.position) - _restPos;
+        var axis = _restRot * hinge.axis;
+        var rest = _restRot * leverDirection;
         return Vector3.SignedAngle(rest, Vector3.ProjectOnPlane(p, axis), axis);
     }
 
-    void Update()
+    private void Update()
     {
-        if (finger && lostAt >= 0f && Time.time - lostAt > grace) finger = null;
+        if (_finger && _lostAt >= 0f && Time.time - _lostAt > grace) _finger = null;
 
-        if (finger)
+        if (_finger)
         {
             // Push only: the lever moves when the finger crosses it, never pulled back.
             float f = FingerAngle();
-            if ((prevF >= target && f < target) || (prevF <= target && f > target))
-                target = Mathf.Clamp(f, -throwAngle, throwAngle);
-            prevF = f;
+            if ((_prevF >= _target && f < _target) || (_prevF <= _target && f > _target))
+                _target = Mathf.Clamp(f, -throwAngle, throwAngle);
+            _prevF = f;
 
-            if (!on && target > deadband) Flip(true);
-            else if (on && target < -deadband) Flip(false);
+            if (!_on && _target > deadband) Flip(true);
+            else if (_on && _target < -deadband) Flip(false);
         }
         else
         {
-            target = on ? throwAngle : -throwAngle; // spring snaps it home
+            _target = _on ? throwAngle : -throwAngle; 
         }
 
         var s = hinge.spring;
-        s.targetPosition = target;
+        s.targetPosition = _target;
         hinge.spring = s;
     }
 
-    void Flip(bool value)
+    private void Flip(bool value)
     {
-        on = value;
+        _on = value;
         if (click) click.PlayOneShot(click.clip);
-        SimTss.Instance.Post(command, on ? 1 : 0);
+        TssSim.Instance.SetSwitch(sw, _on);
     }
 
-    // Board shows TSS truth: if something else changed the switch, the spring swings the lever.
-    void ReadBack()
+    // Board shows TSS truth
+    private void ReadBack(TssSwitch s, bool value)
     {
-        if (finger) return;
-        on = JObject.Parse(SimTss.Instance.Get(1)).SelectToken(jsonPath).Value<bool>();
+        if (s == sw && !_finger) _on = value;
     }
 }

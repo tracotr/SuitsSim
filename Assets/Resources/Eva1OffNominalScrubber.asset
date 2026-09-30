@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 42c721a1563afb74797e45472d71c6cc, type: 3}
+  m_Name: Eva1OffNominalScrubber
+  m_EditorClassIdentifier: Assembly-CSharp::Procedure
+  title: Off Nominal CO2 Scrubber
+  description: CO2 scrubber filled beyond 60% capacity
+  priority: 1
+  steps:
+  - header: Off Nominal CO2 Scrubber
+    text: "DCU: CO2 – switch to the other scrubber (PRI ↔ SEC)"
+    switchRequirements:
+    - requiredSwitch: 2016
+      state: 2
+    valueRequirements: []

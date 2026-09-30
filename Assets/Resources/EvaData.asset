@@ -1,0 +1,244 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 41ee409ac254460c85b4c0534d3911ae, type: 3}
+  m_Name: EvaData
+  m_EditorClassIdentifier: Assembly-CSharp::EvaData
+  primaryBatteryLevel:
+    name: Primary Battery
+    algo: 1
+    start: 100
+    min: 0
+    max: 100
+    rate: 0.05
+    baseV: 0
+    amp: 0
+    freq: 0
+  secondaryBatteryLevel:
+    name: Secondary Battery
+    algo: 1
+    start: 100
+    min: 0
+    max: 100
+    rate: 0.05
+    baseV: 0
+    amp: 0
+    freq: 0
+  primaryOxygenStorage:
+    name: Primary O2 Storage
+    algo: 1
+    start: 100
+    min: 0
+    max: 100
+    rate: 0.013
+    baseV: 0
+    amp: 0
+    freq: 0
+  secondaryOxygenStorage:
+    name: Secondary O2 Storage
+    algo: 1
+    start: 100
+    min: 0
+    max: 100
+    rate: 0.013
+    baseV: 0
+    amp: 0
+    freq: 0
+  primaryOxygenPressure:
+    name: Primary O2 Pressure
+    algo: 3
+    start: 0
+    min: 0
+    max: 100
+    rate: 0
+    baseV: 0
+    amp: 0
+    freq: 0
+  secondaryOxygenPressure:
+    name: Secondary O2 Pressure
+    algo: 3
+    start: 0
+    min: 0
+    max: 100
+    rate: 0
+    baseV: 0
+    amp: 0
+    freq: 0
+  suitPressureOxygen:
+    name: Suit O2 Pressure
+    algo: 4
+    start: 0
+    min: 3
+    max: 4
+    rate: 0.26
+    baseV: 0
+    amp: 0
+    freq: 0
+  suitPressureCo2:
+    name: Suit CO2 Pressure
+    algo: 2
+    start: 0
+    min: 0
+    max: 0.1
+    rate: 0.001
+    baseV: 0
+    amp: 0
+    freq: 0
+  suitPressureOther:
+    name: Suit Other Pressure
+    algo: 4
+    start: 0
+    min: 0
+    max: 0.1
+    rate: 0
+    baseV: 0
+    amp: 0
+    freq: 0
+  suitPressureTotal:
+    name: Suit Total Pressure
+    algo: 3
+    start: 0
+    min: 0
+    max: 100
+    rate: 0
+    baseV: 0
+    amp: 0
+    freq: 0
+  helmetPressureCo2:
+    name: Helmet CO2 Pressure
+    algo: 3
+    start: 0
+    min: 0
+    max: 100
+    rate: 0
+    baseV: 0
+    amp: 0
+    freq: 0
+  primaryFanRpm:
+    name: Primary Fan
+    algo: 4
+    start: 30000
+    min: 0
+    max: 30500
+    rate: 13574
+    baseV: 0
+    amp: 0
+    freq: 0
+  secondaryFanRpm:
+    name: Secondary Fan
+    algo: 4
+    start: 30000
+    min: 0
+    max: 30500
+    rate: 10
+    baseV: 0
+    amp: 0
+    freq: 0
+  scrubberACo2Storage:
+    name: Scrubber A
+    algo: 2
+    start: 0
+    min: 0
+    max: 100
+    rate: 0.13
+    baseV: 0
+    amp: 0
+    freq: 0
+  scrubberBCo2Storage:
+    name: Scrubber B
+    algo: 2
+    start: 0
+    min: 0
+    max: 100
+    rate: 0.13
+    baseV: 0
+    amp: 0
+    freq: 0
+  temperature:
+    name: Temperature
+    algo: 0
+    start: 21.1
+    min: -10
+    max: 40
+    rate: 0
+    baseV: 21.1
+    amp: 5.1
+    freq: 0.018
+  coolantStorage:
+    name: Coolant Storage
+    algo: 1
+    start: 0
+    min: 0
+    max: 100
+    rate: 0.05
+    baseV: 0
+    amp: 0
+    freq: 0
+  coolantGasPressure:
+    name: Coolant Gas Pressure
+    algo: 3
+    start: 0
+    min: 0
+    max: 100
+    rate: 0
+    baseV: 0
+    amp: 0
+    freq: 0
+  coolantLiquidPressure:
+    name: Coolant Liquid Pressure
+    algo: 0
+    start: 0
+    min: 480
+    max: 520
+    rate: 0
+    baseV: 500
+    amp: 2
+    freq: 0.015
+  heartRate:
+    name: Heart Rate
+    algo: 3
+    start: 0
+    min: 0
+    max: 100
+    rate: 0
+    baseV: 0
+    amp: 0
+    freq: 0
+  oxygenConsumption:
+    name: O2 Consumption
+    algo: 3
+    start: 0
+    min: 0
+    max: 100
+    rate: 0
+    baseV: 0
+    amp: 0
+    freq: 0
+  co2Production:
+    name: CO2 Production
+    algo: 3
+    start: 0
+    min: 0
+    max: 100
+    rate: 0
+    baseV: 0
+    amp: 0
+    freq: 0
+  elapsedTime:
+    name: Elapsed Time
+    algo: 2
+    start: 0
+    min: 0
+    max: 10000
+    rate: 1
+    baseV: 0
+    amp: 0
+    freq: 0

@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 42c721a1563afb74797e45472d71c6cc, type: 3}
+  m_Name: Eva1OffNominalO2
+  m_EditorClassIdentifier: Assembly-CSharp::Procedure
+  title: Off Nominal Suit Oxygen Pressure
+  description: Suit O2 pressure out of nominal range
+  priority: 1
+  steps:
+  - header: Off Nominal Suit Oxygen Pressure
+    text: "DCU: OXY – SEC"
+    switchRequirements:
+    - requiredSwitch: 2012
+      state: 1
+    valueRequirements: []
+  - header: Off Nominal Suit Oxygen Pressure
+    text: "Return to PR as soon as possible"
+    switchRequirements: []
+    valueRequirements: []

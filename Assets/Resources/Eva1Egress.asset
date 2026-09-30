@@ -1,0 +1,208 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 42c721a1563afb74797e45472d71c6cc, type: 3}
+  m_Name: Eva1Egress
+  m_EditorClassIdentifier: Assembly-CSharp::Procedure
+  title: EVA Egress for EVA 1
+  description: Egress Procedure for our EVA 1
+  steps:
+  - header: Connect UIA to DCU and Start Depress
+    text: Verify umbilical connection from UIA to DCU
+    switchRequirements: []
+    valueRequirements: []
+  - header: Connect UIA to DCU and Start Depress
+    text: "UIA: EV-1 EMU PWR \u2013 ON"
+    switchRequirements:
+    - requiredSwitch: 2001
+      state: 0
+    valueRequirements: []
+  - header: Connect UIA to DCU and Start Depress
+    text: "DCU: BATT \u2013 UMB"
+    switchRequirements:
+    - requiredSwitch: 2011
+      state: 0
+    valueRequirements: []
+  - header: Connect UIA to DCU and Start Depress
+    text: "UIA: DEPRESS PUMP \u2013 ON"
+    switchRequirements:
+    - requiredSwitch: 2010
+      state: 0
+    valueRequirements: []
+  - header: Prep O2 Tanks
+    text: "UIA: O2 VENT \u2013 OPEN"
+    switchRequirements:
+    - requiredSwitch: 2009
+      state: 0
+    valueRequirements: []
+  - header: Prep O2 Tanks
+    text: Wait until Primary and Secondary O2 tanks < 10 psi
+    switchRequirements: []
+    valueRequirements:
+    - value: 4
+      compare: 0
+      threshold: 10
+    - value: 5
+      compare: 0
+      threshold: 10
+  - header: Prep O2 Tanks
+    text: "UIA: O2 VENT \u2013 CLOSE"
+    switchRequirements:
+    - requiredSwitch: 2009
+      state: 1
+    valueRequirements: []
+  - header: Prep O2 Tanks
+    text: "DCU: OXY \u2013 PRI"
+    switchRequirements:
+    - requiredSwitch: 2012
+      state: 0
+    valueRequirements: []
+  - header: Prep O2 Tanks
+    text: "UIA: EMU-1 OXY \u2013 OPEN"
+    switchRequirements:
+    - requiredSwitch: 2002
+      state: 0
+    valueRequirements: []
+  - header: Prep O2 Tanks
+    text: Wait until Primary O2 tank > 2950 psi
+    switchRequirements: []
+    valueRequirements:
+    - value: 4
+      compare: 1
+      threshold: 2950
+  - header: Prep O2 Tanks
+    text: "UIA: EMU-1 OXY \u2013 CLOSE"
+    switchRequirements:
+    - requiredSwitch: 2002
+      state: 1
+    valueRequirements: []
+  - header: Prep O2 Tanks
+    text: "DCU: OXY \u2013 SEC"
+    switchRequirements:
+    - requiredSwitch: 2012
+      state: 1
+    valueRequirements: []
+  - header: Prep O2 Tanks
+    text: "UIA: EMU-1 OXY \u2013 OPEN"
+    switchRequirements:
+    - requiredSwitch: 2002
+      state: 0
+    valueRequirements: []
+  - header: Prep O2 Tanks
+    text: Wait until Secondary O2 tank > 2950 psi
+    switchRequirements: []
+    valueRequirements:
+    - value: 5
+      compare: 1
+      threshold: 2950
+  - header: Prep O2 Tanks
+    text: "UIA: EMU-1 OXY \u2013 CLOSE"
+    switchRequirements:
+    - requiredSwitch: 2002
+      state: 1
+    valueRequirements: []
+  - header: Prep O2 Tanks
+    text: "DCU: OXY \u2013 PRI"
+    switchRequirements:
+    - requiredSwitch: 2012
+      state: 0
+    valueRequirements: []
+  - header: Prep Coolant Tank
+    text: "DCU: PUMP \u2013 OPEN"
+    switchRequirements:
+    - requiredSwitch: 2015
+      state: 0
+    valueRequirements: []
+  - header: Prep Coolant Tank
+    text: "UIA: EV-1 SUPPLY WATER \u2013 OPEN"
+    switchRequirements:
+    - requiredSwitch: 2003
+      state: 0
+    valueRequirements: []
+  - header: Prep Coolant Tank
+    text: Wait until Coolant > 95%
+    switchRequirements: []
+    valueRequirements:
+    - value: 16
+      compare: 1
+      threshold: 95
+  - header: Prep Coolant Tank
+    text: "UIA: EV-1 SUPPLY WATER \u2013 CLOSE"
+    switchRequirements:
+    - requiredSwitch: 2003
+      state: 1
+    valueRequirements: []
+  - header: End Depress, Check Switches and Disconnect
+    text: Wait until Suit Pressure and O2 Pressure = 4
+    switchRequirements: []
+    valueRequirements:
+    - value: 6
+      compare: 1
+      threshold: 3.99
+    - value: 9
+      compare: 1
+      threshold: 3.99
+  - header: End Depress, Check Switches and Disconnect
+    text: "UIA: DEPRESS PUMP \u2013 OFF"
+    switchRequirements:
+    - requiredSwitch: 2010
+      state: 1
+    valueRequirements: []
+  - header: End Depress, Check Switches and Disconnect
+    text: "DCU: BATT \u2013 PRI"
+    switchRequirements:
+    - requiredSwitch: 2013
+      state: 0
+    valueRequirements: []
+  - header: End Depress, Check Switches and Disconnect
+    text: "DCU: BATT \u2013 LOCAL"
+    switchRequirements:
+    - requiredSwitch: 2011
+      state: 1
+    valueRequirements: []
+  - header: End Depress, Check Switches and Disconnect
+    text: "UIA: EV-1 EMU PWR \u2013 OFF"
+    switchRequirements:
+    - requiredSwitch: 2001
+      state: 1
+    valueRequirements: []
+  - header: End Depress, Check Switches and Disconnect
+    text: "DCU: FAN \u2013 PRI"
+    switchRequirements:
+    - requiredSwitch: 2014
+      state: 0
+    valueRequirements: []
+  - header: End Depress, Check Switches and Disconnect
+    text: "DCU: PUMP \u2013 CLOSE"
+    switchRequirements:
+    - requiredSwitch: 2015
+      state: 1
+    valueRequirements: []
+  - header: End Depress, Check Switches and Disconnect
+    text: "DCU: CO2 \u2013 PRI"
+    switchRequirements:
+    - requiredSwitch: 2016
+      state: 0
+    valueRequirements: []
+  - header: End Depress, Check Switches and Disconnect
+    text: "DCU: Verify OXY \u2013 PRI"
+    switchRequirements:
+    - requiredSwitch: 2012
+      state: 0
+    valueRequirements: []
+  - header: End Depress, Check Switches and Disconnect
+    text: Disconnect UIA and DCU umbilical
+    switchRequirements: []
+    valueRequirements: []
+  - header: End Depress, Check Switches and Disconnect
+    text: Verbally announce completion of egress
+    switchRequirements: []
+    valueRequirements: []
