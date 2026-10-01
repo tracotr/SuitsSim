@@ -177,6 +177,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: DCUToggle (2)
       objectReference: {fileID: 0}
+    - target: {fileID: 9182831388721279411, guid: dad7c143713b0df4b801d7d27bc79773, type: 3}
+      propertyPath: sw
+      value: 2012
+      objectReference: {fileID: 0}
     - target: {fileID: 6108027826336118429, guid: dad7c143713b0df4b801d7d27bc79773, type: 3}
       propertyPath: m_LocalPosition.x
       value: -0.0276
@@ -243,6 +247,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: DCUToggle (1)
       objectReference: {fileID: 0}
+    - target: {fileID: 9182831388721279411, guid: dad7c143713b0df4b801d7d27bc79773, type: 3}
+      propertyPath: sw
+      value: 2011
+      objectReference: {fileID: 0}
     - target: {fileID: 6108027826336118429, guid: dad7c143713b0df4b801d7d27bc79773, type: 3}
       propertyPath: m_LocalPosition.x
       value: -0.0394
@@ -308,6 +316,10 @@ PrefabInstance:
     - target: {fileID: 5175660739725043321, guid: dad7c143713b0df4b801d7d27bc79773, type: 3}
       propertyPath: m_Name
       value: DCUToggle (3)
+      objectReference: {fileID: 0}
+    - target: {fileID: 9182831388721279411, guid: dad7c143713b0df4b801d7d27bc79773, type: 3}
+      propertyPath: sw
+      value: 2013
       objectReference: {fileID: 0}
     - target: {fileID: 6108027826336118429, guid: dad7c143713b0df4b801d7d27bc79773, type: 3}
       propertyPath: m_LocalPosition.x
