@@ -1,10 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
+using System.Text;
 using UnityEngine;
 using static TssSwitch;
 
-// UIA and DCU switches. 2001-2016 are the real TSS command numbers; EVA 2's DCU has none,
-// so it uses 2111+ and nothing in the sim reads it yet. Inspector names show what On means.
+// UIA and DCU switches, numbered with the real TSS command numbers (2001-2016). Inspector names show what On means.
 public enum TssSwitch
 {
     // UIA, EVA 1
@@ -30,14 +31,6 @@ public enum TssSwitch
     [InspectorName("DCU/EVA 1/Fan (PRI)")] DcuEva1Fan = 2014,
     [InspectorName("DCU/EVA 1/Pump (Open)")] DcuEva1Pump = 2015,
     [InspectorName("DCU/EVA 1/CO2 (PRI)")] DcuEva1Co2 = 2016,
-
-    // DCU, EVA 2
-    [InspectorName("DCU/EVA 2/Batt (UMB)")] DcuEva2Batt = 2111,
-    [InspectorName("DCU/EVA 2/OXY (PRI)")] DcuEva2Oxy = 2112,
-    [InspectorName("DCU/EVA 2/Batt Source (PRI)")] DcuEva2BattSource = 2113,
-    [InspectorName("DCU/EVA 2/Fan (PRI)")] DcuEva2Fan = 2114,
-    [InspectorName("DCU/EVA 2/Pump (Open)")] DcuEva2Pump = 2115,
-    [InspectorName("DCU/EVA 2/CO2 (PRI)")] DcuEva2Co2 = 2116,
 }
 
 public enum TssError { None, O2Low, O2High, FanLow }
@@ -45,13 +38,18 @@ public enum TssError { None, O2Low, O2High, FanLow }
 [DefaultExecutionOrder(-100)]
 public class TssSim : MonoBehaviour
 {
-    public static TssSim Instance { get; private set;  }
+    public static TssSim Instance { get; private set; }
 
     [SerializeField] private EvaData defaultEvaData;
     [Tooltip("Start the EVA as soon as play mode begins.")]
     public bool startOnPlay = true;
     [Tooltip("Seconds into the EVA when a random suit fault is thrown. -1 = never.")]
     public int randomErrorAt = -1;
+
+    [Header("Live view (Play mode, read-only)")]
+    [SerializeField] private string status;
+    [SerializeField, TextArea(4, 20)] private string switches;
+    [SerializeField, TextArea(8, 40)] private string telemetry;
 
     // Raised after every once-per-second update.
     public event Action Ticked;
@@ -87,6 +85,7 @@ public class TssSim : MonoBehaviour
         ApplyEvaFormulas(Eva1);
         ComputeFormulas();
         Running = startOnPlay;
+        RefreshLiveView();
     }
 
     private void OnDestroy()
@@ -122,6 +121,7 @@ public class TssSim : MonoBehaviour
             Tick();
             Ticked?.Invoke();
         }
+        RefreshLiveView();
     }
 
     public bool GetSwitch(TssSwitch s) => _on.Contains(s);
@@ -129,7 +129,36 @@ public class TssSim : MonoBehaviour
     // The sim reacts on its next tick.
     public void SetSwitch(TssSwitch s, bool value)
     {
-        if (value ? _on.Add(s) : _on.Remove(s)) SwitchChanged?.Invoke(s, value);
+        if (!(value ? _on.Add(s) : _on.Remove(s))) return;
+        SwitchChanged?.Invoke(s, value);
+        RefreshLiveView();
+    }
+
+    // The switch's Inspector name, e.g. "DCU/EVA 1/Fan (PRI)".
+    public static string Label(TssSwitch s) =>
+        typeof(TssSwitch).GetField(s.ToString())?.GetCustomAttribute<InspectorNameAttribute>()?.displayName ?? s.ToString();
+
+    // Fills the Inspector's live view: running state + error flags, every switch, every telemetry value.
+    private void RefreshLiveView()
+    {
+        if (Eva1 == null) return;
+        var flags = new List<string>();
+        if (FanError) flags.Add("FAN");
+        if (OxyError) flags.Add("OXY");
+        if (PowerError) flags.Add("POWER");
+        if (ScrubberError) flags.Add("SCRUBBER");
+        status = $"{(Running ? "Running" : "Stopped")}  t = {_simTime} s   fault: {CurrentError}"
+            + (flags.Count > 0 ? $"   ERRORS: {string.Join(", ", flags)}" : "   no error flags");
+
+        var sb = new StringBuilder();
+        foreach (TssSwitch s in Enum.GetValues(typeof(TssSwitch)))
+            sb.AppendLine($"{(GetSwitch(s) ? "ON " : "off")}  {Label(s)}");
+        switches = sb.ToString();
+
+        sb.Clear();
+        foreach (var f in Eva1.All())
+            sb.AppendLine($"{f.Value,10:0.###}  {f.name}{(f.Active ? "" : "   (idle)")}");
+        telemetry = sb.ToString();
     }
 
     public void SetImu(float x, float y, float heading)
@@ -318,7 +347,7 @@ public class TssSim : MonoBehaviour
             Check(Mathf.Approximately(Eva1.suitPressureOxygen.Value, 4f), "suit O2 pressurizes to 4 psi");
 
             ThrowError(TssError.FanLow); Run(1);
-            Check(FanError && Eva1.primaryFanRpm.Value == 0f, "fan fault raises FanError");
+            Check(FanError && Mathf.Approximately(Eva1.primaryFanRpm.Value, 0f), "fan fault raises FanError");
             SetSwitch(DcuEva1Fan, false); Run(1);
             Check(!FanError && Mathf.Approximately(Eva1.secondaryFanRpm.Value, 30000f), "secondary fan clears FanError");
             Debug.Log("TssSim self test passed");

@@ -1,6 +1,7 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
-using System.Reflection;
+using System.Text;
 using UnityEngine;
 
 // Runs Procedure assets against TssSim. Steps advance as soon as their switches and values are met,
@@ -14,8 +15,10 @@ public class ProcedureRunner : MonoBehaviour
     [Tooltip("Started on Play. Leave empty to start idle.")]
     public Procedure startProcedure;
     
-    [Tooltip("CAPCOM's reset: all switches off before the start procedure begins.")]
+    [Tooltip("CAPCOM setup before the start procedure: all switches off, then Start EVA (telemetry runs during egress).")]
     public bool resetSwitchesOnStart = true;
+    [Tooltip("Complete Egress (context menu): pause before each step so you can watch the levers.")]
+    public float stepDelay = 0.3f;
 
     [Header("Urgent procedures, started when the TSS raises the error")]
     public Procedure fanErrorProcedure;
@@ -23,11 +26,17 @@ public class ProcedureRunner : MonoBehaviour
     public Procedure powerErrorProcedure;
     public Procedure scrubberErrorProcedure;
 
+    [Header("Live view (Play mode, read-only)")]
+    [SerializeField] private string currentProcedure;
+    [SerializeField, TextArea(8, 40)] private string stepList;
+
     // Procedure, step or pause state changed. All the UI needs to redraw.
     public event Action Changed;
     
     // A switch was flipped that the current step didn't ask for, or a start was deferred.
     public event Action<string> Warning;
+    // The switch behind an "Unexpected" warning, so the board can point at it.
+    public event Action<TssSwitch> UnexpectedSwitch;
     public event Action<Procedure> Completed;
 
     public Procedure Current => _urgent.Count > 0 ? _urgent.Peek() : _normal;
@@ -62,6 +71,7 @@ public class ProcedureRunner : MonoBehaviour
     {
         if (Instance && Instance != this) { Destroy(this); return; }
         Instance = this;
+        Changed += RefreshLiveView;
     }
 
     private void Start()
@@ -69,7 +79,12 @@ public class ProcedureRunner : MonoBehaviour
         _sim = TssSim.Instance;
         if (startProcedure)
         {
-            if (resetSwitchesOnStart) _sim.ResetSwitches();
+            if (resetSwitchesOnStart)
+            {
+                // CAPCOM before egress: all switches down/back, then START EVA telemetry (values only move while running).
+                _sim.ResetSwitches();
+                _sim.StartEva();
+            }
             Begin(startProcedure);
         }
         _sim.SwitchChanged += OnSwitchChanged;
@@ -108,19 +123,22 @@ public class ProcedureRunner : MonoBehaviour
         Begin(p);
     }
 
-    // Finishes the current step, only if it's a manual one.
+    // Finishes the current step if it's manual, or a confirm step whose requirements are met.
+    [ContextMenu("Confirm Step")]
     public void Confirm()
     {
-        if (CurrentStep is { IsManual: true }) Advance();
+        if (CurrentStep != null && CurrentStep.CanConfirm(_sim)) Advance();
     }
 
     // Testing: moves on without checking the step.
+    [ContextMenu("Skip Step")]
     public void Skip()
     {
         if (CurrentStep != null) Advance();
     }
 
     // Testing: goes back one step. If that step is already met it advances again on the next tick.
+    [ContextMenu("Back Step")]
     public void Back()
     {
         if (!Current || Index == 0) return;
@@ -143,8 +161,11 @@ public class ProcedureRunner : MonoBehaviour
         if (step == null) return; // idle: free play on the boards
 
         if (!step.Expects(s, _sim))
-            Warning?.Invoke($"Unexpected: {Label(s)} → {(on ? "On" : "Off")}");
-        else if (step.IsMet(_sim))
+        {
+            Warning?.Invoke($"Unexpected: {TssSim.Label(s)} → {(on ? "On" : "Off")}");
+            UnexpectedSwitch?.Invoke(s);
+        }
+        else if (step.CompletesOnItsOwn(_sim))
             Advance();
     }
 
@@ -155,7 +176,7 @@ public class ProcedureRunner : MonoBehaviour
         Watch(_sim.PowerError, ref _powerWas, powerErrorProcedure);
         Watch(_sim.ScrubberError, ref _scrubberWas, scrubberErrorProcedure);
 
-        if (CurrentStep != null && CurrentStep.IsMet(_sim)) Advance(); // wait steps
+        if (CurrentStep != null && CurrentStep.CompletesOnItsOwn(_sim)) Advance(); // wait steps
     }
 
     // Starts the error's procedure when its flag turns on. A repeat error starts it over.
@@ -188,7 +209,7 @@ public class ProcedureRunner : MonoBehaviour
             var step = CurrentStep;
             if (step == null) { Finish(); continue; }
             step.Begin(_sim);
-            if (!step.IsMet(_sim)) break;
+            if (!step.CompletesOnItsOwn(_sim)) break;
             _progress[Current]++;
         }
         Changed?.Invoke();
@@ -203,9 +224,34 @@ public class ProcedureRunner : MonoBehaviour
         Completed?.Invoke(done);
     }
 
-    // The switch's Inspector name, e.g. "DCU/EVA 1/Fan (PRI)".
-    private static string Label(TssSwitch s) =>
-        typeof(TssSwitch).GetField(s.ToString())?.GetCustomAttribute<InspectorNameAttribute>()?.displayName ?? s.ToString();
+    // Fills the Inspector's live view: current procedure, what's paused, and every step
+    // (✓ done, ▶ current, "(Confirm)" when the current step is waiting for the tester).
+    private void RefreshLiveView()
+    {
+        if (!Current)
+        {
+            currentProcedure = "(idle)";
+            stepList = "";
+            return;
+        }
+
+        var paused = new StringBuilder();
+        foreach (var p in Paused) paused.Append($"{p.title} {StepOf(p) + 1}/{p.steps.Count}, ");
+        currentProcedure = $"{(IsUrgent ? "URGENT  " : "")}{Current.title}  —  step {Index + 1}/{Current.steps.Count}"
+            + (paused.Length > 0 ? $"   (paused: {paused.ToString().TrimEnd(',', ' ')})" : "");
+
+        var sb = new StringBuilder();
+        string header = null;
+        for (int i = 0; i < Current.steps.Count; i++)
+        {
+            var s = Current.steps[i];
+            if (s.header != header) { sb.AppendLine($"[{s.header}]"); header = s.header; }
+            string mark = i < Index ? "✓" : i == Index ? "▶" : "  ";
+            string confirm = i == Index && (s.IsManual || s.requireConfirm) ? "   (Confirm)" : "";
+            sb.AppendLine($"{mark} {i + 1,2}. {s.text}{confirm}");
+        }
+        stepList = sb.ToString();
+    }
 
     // Play mode > right-click > Self Test. Plays the start procedure by flipping each required switch,
     // throws a fan fault once the fan is on PRI, and checks that the fan procedure takes over and the
@@ -213,6 +259,7 @@ public class ProcedureRunner : MonoBehaviour
     [ContextMenu("Self Test")]
     private void SelfTest()
     {
+        Debug.Log("ProcedureRunner self test: starting" + (startProcedure ? $" ({startProcedure.title})" : ""));
         string failure = RunSelfTest();
         if (failure == null) Debug.Log("ProcedureRunner self test passed");
         else Debug.LogError("ProcedureRunner self test failed: " + failure);
@@ -225,6 +272,21 @@ public class ProcedureRunner : MonoBehaviour
         var warnings = new List<string>();
         Action<string> onWarning = warnings.Add;
         Warning += onWarning;
+        // Log every step as the test reaches it, with the sim seconds the previous one took.
+        Procedure lastP = null;
+        int lastI = -1, lastTick = 0, ticks = 0;
+        Action onTick = () => ticks++;
+        Action onChanged = () =>
+        {
+            if (Current == lastP && Index == lastI) return;
+            string waited = ticks > lastTick ? $"  (waited {ticks - lastTick} s)" : "";
+            lastP = Current; lastI = Index; lastTick = ticks;
+            Debug.Log(Current
+                ? $"  {(IsUrgent ? "URGENT " : "")}{Current.title} {Index + 1}/{Current.steps.Count}: {CurrentStep?.text}{waited}"
+                : $"  done{waited}");
+        };
+        Changed += onChanged;
+        sim.Ticked += onTick;
         try
         {
             Stop();
@@ -240,6 +302,7 @@ public class ProcedureRunner : MonoBehaviour
                 {
                     thrown = true;
                     int resumeAt = Index;
+                    Debug.Log($"  -- throwing Fan Low at {Current.title} step {Index + 1}");
                     sim.ThrowError(TssError.FanLow);
                     sim.Advance(1);
                     if (Current != fanErrorProcedure) return "fan error didn't start the fan procedure";
@@ -259,6 +322,8 @@ public class ProcedureRunner : MonoBehaviour
         finally
         {
             Warning -= onWarning;
+            Changed -= onChanged;
+            sim.Ticked -= onTick;
             Stop();
             sim.ResetSwitches();
             sim.ResetEva();
@@ -267,16 +332,68 @@ public class ProcedureRunner : MonoBehaviour
         }
     }
 
-    // Does what the current step asks: Confirm a manual step, flip its switches, or wait a second.
+    // Play mode > right-click > Complete Egress. Plays the start procedure live on the boards: each lever
+    // flips for real, wait steps fast-forward the sim one second per frame. Leaves the finished state up.
+    [ContextMenu("Complete Egress")]
+    private void CompleteEgress()
+    {
+        if (!_sim || !startProcedure) { Debug.LogWarning("Complete Egress needs Play mode and a Start Procedure"); return; }
+        StopAllCoroutines();
+        StartCoroutine(PlayLive(startProcedure));
+    }
+
+    private IEnumerator PlayLive(Procedure p)
+    {
+        var warnings = new List<string>();
+        Action<string> onWarning = warnings.Add;
+        Warning += onWarning;
+        Debug.Log($"Complete Egress: playing {p.title}");
+        Stop();
+        _sim.ResetSwitches();
+        _sim.ResetEva();
+        _sim.StartEva();
+        Begin(p);
+
+        string failure = null;
+        while (Current == p)
+        {
+            int i = Index;
+            var step = CurrentStep;
+            Debug.Log($"  {p.title} {i + 1}/{p.steps.Count}: {step.text}");
+            yield return new WaitForSeconds(stepDelay);
+
+            foreach (var r in step.switchRequirements)
+                _sim.SetSwitch(r.requiredSwitch, r.state == SwitchState.Flip ? !_sim.GetSwitch(r.requiredSwitch) : r.state == SwitchState.On);
+
+            int waited = 0;
+            while (Current == p && Index == i && waited < 600)
+            {
+                if (step.CanConfirm(_sim)) { Confirm(); break; } // stands in for the tester's Confirm
+                _sim.Advance(1);
+                waited++;
+                yield return null;
+            }
+            if (Current == p && Index == i) { failure = $"stuck at step {i + 1}: {step.text}"; break; }
+            if (waited > 0) Debug.Log($"    waited {waited} s");
+            if (Current == p && Index > i + 1) Debug.Log($"    steps {i + 2}–{Index} already met, passed automatically");
+        }
+
+        Warning -= onWarning;
+        if (failure != null) Debug.LogError("Complete Egress failed: " + failure);
+        else if (Current) Debug.LogWarning($"Complete Egress: interrupted by {Current.title}");
+        else if (warnings.Count > 0) Debug.LogWarning("Complete Egress: done with warnings: " + string.Join("; ", warnings));
+        else Debug.Log("Complete Egress: done, no warnings");
+    }
+
+    // Does what the current step asks: flip its switches, Confirm it if it's waiting for that, or wait a second.
     private void PlayStep()
     {
         var p = Current;
         int i = Index;
         var step = CurrentStep;
-        if (step.IsManual) Confirm();
-        else
-            foreach (var r in step.switchRequirements)
-                _sim.SetSwitch(r.requiredSwitch, r.state == SwitchState.Flip ? !_sim.GetSwitch(r.requiredSwitch) : r.state == SwitchState.On);
+        foreach (var r in step.switchRequirements)
+            _sim.SetSwitch(r.requiredSwitch, r.state == SwitchState.Flip ? !_sim.GetSwitch(r.requiredSwitch) : r.state == SwitchState.On);
+        if (Current == p && Index == i && step.CanConfirm(_sim)) Confirm();
         if (Current == p && Index == i) _sim.Advance(1);
     }
 }

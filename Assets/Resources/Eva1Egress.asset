@@ -198,6 +198,7 @@ MonoBehaviour:
     - requiredSwitch: 2012
       state: 0
     valueRequirements: []
+    requireConfirm: 1
   - header: End Depress, Check Switches and Disconnect
     text: Disconnect UIA and DCU umbilical
     switchRequirements: []

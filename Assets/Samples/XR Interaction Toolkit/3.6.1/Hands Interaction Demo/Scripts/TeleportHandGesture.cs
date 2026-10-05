@@ -39,6 +39,13 @@ namespace UnityEngine.XR.Interaction.Toolkit.XRHandLocomotion
         [Header("Cancel Teleport Mode")]
         [SerializeField]
         XRHandShape m_CancelHandShape;
+
+        /// <summary>
+        /// Seconds the activate shape can be lost (or the hand untracked) before teleport mode turns off.
+        /// Covers the moment the index finger curls to pinch, before the pinch registers as a select.
+        /// </summary>
+        [SerializeField]
+        float m_LoseShapeGrace = 0.35f;
 #endif
 
         /// <summary>
@@ -178,21 +185,35 @@ namespace UnityEngine.XR.Interaction.Toolkit.XRHandLocomotion
 #if XR_HANDS_1_5_OR_NEWER
         IEnumerator MaintainTeleportMode()
         {
+            var lostAt = -1f;
             while (isActiveAndEnabled)
             {
                 // Check that the hand subsystem is still running to guard against accessing a destroyed joints
                 // array due to the hand subsystem being destroyed between the time of the joints updated callback
                 // and this coroutine executes.
-                if (m_LatestHandData != null && m_LatestHandData.subsystem.running && m_LatestHandData.hand.isTracked)
+                var tracked = m_LatestHandData != null && m_LatestHandData.subsystem.running && m_LatestHandData.hand.isTracked;
+                if (tracked && m_CancelHandShape.CheckConditions(m_LatestHandData))
                 {
-                    var shapeDetected = m_CancelHandShape.CheckConditions(m_LatestHandData);
-                    if (shapeDetected)
-                        OnCancelDetected();
-
-                    // While the interactor is selecting, disable the input tracking so that the teleport ray doesn't move
-                    var interactorIsSelecting = m_TeleportInteractor.hasSelection;
-                    m_TrackedPoseDriver.enabled = !interactorIsSelecting;
+                    OnCancelDetected();
+                    yield break;
                 }
+
+                // Stay on while the pose is held palm-up (same shape + orientation that activates it) or a target is
+                // locked (pinching); turning the palm down or dropping the pose turns it off after a short grace.
+                var interactorIsSelecting = m_TeleportInteractor.hasSelection;
+                var holding = interactorIsSelecting || (tracked && m_ActivateHandShape.CheckConditions(m_LatestHandData) &&
+                    m_ActivateHandOrientation.CheckConditions(m_LatestHandData.hand.rootPose, m_LatestHandData.hand.handedness));
+                if (holding) lostAt = -1f;
+                else if (lostAt < 0f) lostAt = Time.time;
+                else if (Time.time - lostAt > m_LoseShapeGrace)
+                {
+                    OnCancelDetected();
+                    yield break;
+                }
+
+                // While the interactor is selecting, disable the input tracking so that the teleport ray doesn't move
+                if (tracked)
+                    m_TrackedPoseDriver.enabled = !interactorIsSelecting;
 
                 yield return null;
             }

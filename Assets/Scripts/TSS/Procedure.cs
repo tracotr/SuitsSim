@@ -21,9 +21,17 @@ public class ProcedureStep
     public string text = "Procedure Step Text";
     public List<SwitchReq> switchRequirements = new();
     public List<ValueReq> valueRequirements = new();
+    [Tooltip("Wait for Confirm even once the requirements are met (verify / check steps the tester signs off).")]
+    public bool requireConfirm;
 
     // No requirements = manual step, done on Confirm.
     public bool IsManual => switchRequirements.Count == 0 && valueRequirements.Count == 0;
+
+    // Done without anyone pressing Confirm.
+    public bool CompletesOnItsOwn(TssSim sim) => !requireConfirm && IsMet(sim);
+
+    // Confirm is allowed: a manual step, or a confirm step whose requirements are met.
+    public bool CanConfirm(TssSim sim) => IsManual || (requireConfirm && IsMet(sim));
 
     // Call when the step becomes current, so Flip requirements know the starting position.
     public void Begin(TssSim sim)

@@ -683,7 +683,7 @@ MonoBehaviour:
   m_AimTargetObject: {fileID: 0}
   m_PhysicsLayerMask:
     serializedVersion: 2
-    m_Bits: 1
+    m_Bits: 16385
   m_PhysicsTriggerInteraction: 1
   m_CastRadius: 0.1
 --- !u!114 &1255647619390271626
@@ -705,7 +705,7 @@ MonoBehaviour:
   m_AimTargetObject: {fileID: 2442306273320644280}
   m_RaycastMask:
     serializedVersion: 2
-    m_Bits: 2147483681
+    m_Bits: 2147500065
   m_RaycastTriggerInteraction: 1
   m_RaycastSnapVolumeInteraction: 1
   m_RaycastUIDocumentTriggerInteraction: 1

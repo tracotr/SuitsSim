@@ -5,12 +5,12 @@ public class ImuFeed : MonoBehaviour
 {
     public Transform head; // XR Origin > Camera Offset > Main Camera
 
-    void Start() => TssSim.Instance.Ticked += Send;
-    void OnDestroy() { if (TssSim.Instance) TssSim.Instance.Ticked -= Send; }
+    private void Start() => TssSim.Instance.Ticked += Send;
+    private void OnDestroy() { if (TssSim.Instance) TssSim.Instance.Ticked -= Send; }
 
-    void Send()
+    private void Send()
     {
-        Vector3 p = head.position;
+        var p = head.position;
         TssSim.Instance.SetImu(p.x, p.z, head.eulerAngles.y);
     }
 }
