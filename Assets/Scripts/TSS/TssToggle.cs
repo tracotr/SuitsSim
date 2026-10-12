@@ -1,158 +1,117 @@
 using UnityEngine;
-using UnityEngine.XR.Interaction.Toolkit.Inputs;
-using UnityEngine.XR.Interaction.Toolkit.Interactables;
-using UnityEngine.XR.Interaction.Toolkit.Interactors;
+using UnityEngine.XR.Content.Interaction;
+using UnityEngine.XR.Interaction.Toolkit;
 
-[RequireComponent(typeof(HingeJoint), typeof(XRSimpleInteractable))]
+// Connects an XRLever to its TSS switch, both ways, and gives it a click, hover tint and warning blink.
 public class TssToggle : MonoBehaviour
 {
-    public TssSwitch sw = TssSwitch.UiaEva1Power;
-    public Vector3 leverDirection = Vector3.left; // which way the lever points, in Pivot's local space
-    public float throwAngle = 30f;                // must match the hinge limits
-    public float deadband = 3f;                   // degrees past center before it counts as flipped
-    public float grace = 0.15f;                   // seconds to keep contact if hover flickers
-    [Range(0.1f, 1f)] public float give = 0.5f;   // how far the lever follows the finger before the detent (1 = no resistance)
-    public AudioSource click;
-    public Color hoverColor = new(0.3f, 0.8f, 1f);  // lever tint while a finger / ray is on it
-    public Color warningColor = new(1f, 0.15f, 0.1f); // blinks when flipped out of procedure order
-    public float warningTime = 0.9f;                // seconds of blinking (3 blinks)
+    [Header("References")]
+    [Tooltip("XRLever on the lever's Pivot.")]
+    [SerializeField] private XRLever lever;
 
-    [SerializeField] private HingeJoint hinge;
-    [SerializeField] private XRSimpleInteractable interactable;
-    private Quaternion _restRot;
-    private Vector3 _restPos;
-    private Transform _finger;
-    private float _prevF, _target, _lostAt = -1f;
-    private bool _on, _pushing;
-    private Renderer[] _renderers;
-    private MaterialPropertyBlock _hoverBlock, _warningBlock, _shown;
-    private float _warnStart = -1f;
+    [Tooltip("Renderer of the lever that gets tinted on hover and warnings.")]
+    [SerializeField] private Renderer leverRenderer;
+
+    [Tooltip("Plays when the switch flips.")]
+    [SerializeField] private AudioSource click;
+
+    [Header("Switch")]
+    [Tooltip("The TSS switch this lever controls.")]
+    [SerializeField] private TssSwitch sw = TssSwitch.UiaEva1Power;
+
+    [Header("Feedback")]
+    [Tooltip("Lever tint while a hand or controller is on it.")]
+    [SerializeField] private Color hoverColor = new(0.3f, 0.8f, 1f);
+
+    [Tooltip("Blinks when flipped out of procedure order.")]
+    [SerializeField] private Color warningColor = new(1f, 0.15f, 0.1f);
+
+    [Tooltip("Seconds of blinking (3 blinks).")]
+    [SerializeField] private float warningTime = 0.9f;
+
+    // runtime values
     private static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
+    private bool _settingLever;
+    private float _warningStart = -1f;
+    private MaterialPropertyBlock _hoverBlock, _warningBlock, _shownBlock;
 
     private void Awake()
     {
-        _restRot = transform.localRotation;
-        _restPos = transform.localPosition;
-        _target = -throwAngle;
-        _renderers = GetComponentsInChildren<Renderer>(); // the lever
         _hoverBlock = new MaterialPropertyBlock();
         _hoverBlock.SetColor(BaseColor, hoverColor);
         _warningBlock = new MaterialPropertyBlock();
         _warningBlock.SetColor(BaseColor, warningColor);
-
-        interactable.hoverEntered.AddListener(_ => RefreshTint());
-        interactable.hoverExited.AddListener(_ => RefreshTint()); // stays lit while anything else hovers
-        interactable.hoverEntered.AddListener(a =>
-        {
-            if (a.interactorObject is not XRPokeInteractor) return;
-            _finger = a.interactorObject.GetAttachTransform(interactable);
-            _prevF = FingerAngle();
-            _lostAt = -1f;
-        });
-        interactable.hoverExited.AddListener(a =>
-        {
-            if (a.interactorObject is XRPokeInteractor) _lostAt = Time.time;
-        });
-        // Controllers (ray / near-far, incl. the XR Interaction Simulator): select flips it.
-        // Not with tracked hands: their pinch is a select too and would flip switches from across the room.
-        interactable.selectEntered.AddListener(a =>
-        {
-            if (a.interactorObject is XRPokeInteractor ||
-                XRInputModalityManager.currentInputMode.Value != XRInputModalityManager.InputMode.MotionController) return;
-            Flip(!_on);
-        });
     }
 
-    private void Start()
+    private void OnEnable()
     {
-        _on = TssSim.Instance.GetSwitch(sw);
-        TssSim.Instance.SwitchChanged += ReadBack;
-        if (ProcedureRunner.Instance) ProcedureRunner.Instance.UnexpectedSwitch += OnUnexpected;
-    }
-    
-    private void OnDestroy()
-    {
-        if (TssSim.Instance) TssSim.Instance.SwitchChanged -= ReadBack;
-        if (ProcedureRunner.Instance) ProcedureRunner.Instance.UnexpectedSwitch -= OnUnexpected;
+        SetLever(TssSim.Instance.GetSwitch(sw));
+
+        lever.onLeverActivate.AddListener(OnLeverOn);
+        lever.onLeverDeactivate.AddListener(OnLeverOff);
+        lever.hoverEntered.AddListener(OnHoverChanged);
+        lever.hoverExited.AddListener(OnHoverChanged);
+        TssSim.Instance.SwitchChanged += OnSwitchChanged;
+        if (ProcedureRunner.Instance) ProcedureRunner.Instance.UnexpectedSwitch += OnUnexpectedSwitch;
     }
 
-    // Fingertip angle around the hinge, measured the same way as hinge.angle.
-    private float FingerAngle()
+    private void OnDisable()
     {
-        var p = transform.parent.InverseTransformPoint(_finger.position) - _restPos;
-        var axis = _restRot * hinge.axis;
-        var rest = _restRot * leverDirection;
-        return Vector3.SignedAngle(rest, Vector3.ProjectOnPlane(p, axis), axis);
+        lever.onLeverActivate.RemoveListener(OnLeverOn);
+        lever.onLeverDeactivate.RemoveListener(OnLeverOff);
+        lever.hoverEntered.RemoveListener(OnHoverChanged);
+        lever.hoverExited.RemoveListener(OnHoverChanged);
+        if (TssSim.Instance) TssSim.Instance.SwitchChanged -= OnSwitchChanged;
+        if (ProcedureRunner.Instance) ProcedureRunner.Instance.UnexpectedSwitch -= OnUnexpectedSwitch;
     }
 
     private void Update()
     {
-        if (_finger && _lostAt >= 0f && Time.time - _lostAt > grace) _finger = null;
-
-        float rest = _on ? throwAngle : -throwAngle;
-        if (!_finger) _pushing = false;
-        else
-        {
-            // Push only: contact starts when the finger crosses the lever, never pulled back.
-            float f = FingerAngle();
-            if (!_pushing && ((_prevF >= _target && f < _target) || (_prevF <= _target && f > _target))) _pushing = true;
-            _prevF = f;
-
-            if (_pushing)
-            {
-                float push = Mathf.Clamp(f, -throwAngle, throwAngle);
-                if (_on ? push >= rest : push <= rest) _pushing = false;   // finger backed off
-                else if (_on ? push < -deadband : push > deadband)
-                {
-                    // Detent: past center it lets go and snaps all the way over.
-                    Flip(!_on);
-                    _pushing = false;
-                    rest = _on ? throwAngle : -throwAngle;
-                }
-                else
-                {
-                    _target = Mathf.Lerp(rest, push, give); // stiff: lever only follows part of the push
-                }
-            }
-        }
-        if (!_pushing) _target = rest;
-
-        var s = hinge.spring;
-        s.targetPosition = _target;
-        hinge.spring = s;
-
-        if (_warnStart >= 0f) RefreshTint();
+        if (_warningStart >= 0f) RefreshTint();
     }
 
-    private void Flip(bool value)
+    private void OnLeverOn() => SendToTss(true);
+
+    private void OnLeverOff() => SendToTss(false);
+
+    private void SendToTss(bool on)
     {
-        _on = value;
+        if (_settingLever) return;
         if (click) click.PlayOneShot(click.clip);
-        TssSim.Instance.SetSwitch(sw, _on);
+        TssSim.Instance.SetSwitch(sw, on);
     }
 
-    private void OnUnexpected(TssSwitch s)
+    // The lever fires its events when set from code too, so those are ignored here.
+    private void SetLever(bool on)
+    {
+        _settingLever = true;
+        lever.value = on;
+        _settingLever = false;
+    }
+
+    private void OnSwitchChanged(TssSwitch s, bool value)
+    {
+        if (s == sw && value != lever.value) SetLever(value);
+    }
+
+    private void OnHoverChanged(BaseInteractionEventArgs args) => RefreshTint();
+
+    private void OnUnexpectedSwitch(TssSwitch s)
     {
         if (s != sw) return;
-        _warnStart = Time.time;
+        _warningStart = Time.time;
         RefreshTint();
     }
 
-    // Warning blink beats hover tint; only touches the renderers when the tint actually changes.
+    // The warning blink wins over the hover tint.
     private void RefreshTint()
     {
-        float t = Time.time - _warnStart;
-        if (_warnStart >= 0f && t >= warningTime) _warnStart = -1f;
-        bool blinkOn = _warnStart >= 0f && (int)(t / (warningTime / 6f)) % 2 == 0;
-        var block = blinkOn ? _warningBlock : interactable.isHovered ? _hoverBlock : null;
-        if (block == _shown) return;
-        _shown = block;
-        foreach (var r in _renderers) r.SetPropertyBlock(block);
-    }
-
-    // Board shows TSS truth
-    private void ReadBack(TssSwitch s, bool value)
-    {
-        if (s == sw && !_finger) _on = value;
+        float t = Time.time - _warningStart;
+        if (_warningStart >= 0f && t >= warningTime) _warningStart = -1f;
+        bool blinkOn = _warningStart >= 0f && (int)(t / (warningTime / 6f)) % 2 == 0;
+        var block = blinkOn ? _warningBlock : lever.isHovered ? _hoverBlock : null;
+        if (block == _shownBlock) return;
+        _shownBlock = block;
+        leverRenderer.SetPropertyBlock(block);
     }
 }

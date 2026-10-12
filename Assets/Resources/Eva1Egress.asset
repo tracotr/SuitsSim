@@ -22,25 +22,25 @@ MonoBehaviour:
   - header: Connect UIA to DCU and Start Depress
     text: "UIA: EV-1 EMU PWR \u2013 ON"
     switchRequirements:
-    - requiredSwitch: 2001
+    - requiredSwitch: 0
       state: 0
     valueRequirements: []
   - header: Connect UIA to DCU and Start Depress
     text: "DCU: BATT \u2013 UMB"
     switchRequirements:
-    - requiredSwitch: 2011
+    - requiredSwitch: 10
       state: 0
     valueRequirements: []
   - header: Connect UIA to DCU and Start Depress
     text: "UIA: DEPRESS PUMP \u2013 ON"
     switchRequirements:
-    - requiredSwitch: 2010
+    - requiredSwitch: 9
       state: 0
     valueRequirements: []
   - header: Prep O2 Tanks
     text: "UIA: O2 VENT \u2013 OPEN"
     switchRequirements:
-    - requiredSwitch: 2009
+    - requiredSwitch: 8
       state: 0
     valueRequirements: []
   - header: Prep O2 Tanks
@@ -56,19 +56,19 @@ MonoBehaviour:
   - header: Prep O2 Tanks
     text: "UIA: O2 VENT \u2013 CLOSE"
     switchRequirements:
-    - requiredSwitch: 2009
+    - requiredSwitch: 8
       state: 1
     valueRequirements: []
   - header: Prep O2 Tanks
     text: "DCU: OXY \u2013 PRI"
     switchRequirements:
-    - requiredSwitch: 2012
+    - requiredSwitch: 11
       state: 0
     valueRequirements: []
   - header: Prep O2 Tanks
     text: "UIA: EMU-1 OXY \u2013 OPEN"
     switchRequirements:
-    - requiredSwitch: 2002
+    - requiredSwitch: 1
       state: 0
     valueRequirements: []
   - header: Prep O2 Tanks
@@ -81,19 +81,19 @@ MonoBehaviour:
   - header: Prep O2 Tanks
     text: "UIA: EMU-1 OXY \u2013 CLOSE"
     switchRequirements:
-    - requiredSwitch: 2002
+    - requiredSwitch: 1
       state: 1
     valueRequirements: []
   - header: Prep O2 Tanks
     text: "DCU: OXY \u2013 SEC"
     switchRequirements:
-    - requiredSwitch: 2012
+    - requiredSwitch: 11
       state: 1
     valueRequirements: []
   - header: Prep O2 Tanks
     text: "UIA: EMU-1 OXY \u2013 OPEN"
     switchRequirements:
-    - requiredSwitch: 2002
+    - requiredSwitch: 1
       state: 0
     valueRequirements: []
   - header: Prep O2 Tanks
@@ -106,25 +106,25 @@ MonoBehaviour:
   - header: Prep O2 Tanks
     text: "UIA: EMU-1 OXY \u2013 CLOSE"
     switchRequirements:
-    - requiredSwitch: 2002
+    - requiredSwitch: 1
       state: 1
     valueRequirements: []
   - header: Prep O2 Tanks
     text: "DCU: OXY \u2013 PRI"
     switchRequirements:
-    - requiredSwitch: 2012
+    - requiredSwitch: 11
       state: 0
     valueRequirements: []
   - header: Prep Coolant Tank
     text: "DCU: PUMP \u2013 OPEN"
     switchRequirements:
-    - requiredSwitch: 2015
+    - requiredSwitch: 14
       state: 0
     valueRequirements: []
   - header: Prep Coolant Tank
     text: "UIA: EV-1 SUPPLY WATER \u2013 OPEN"
     switchRequirements:
-    - requiredSwitch: 2003
+    - requiredSwitch: 2
       state: 0
     valueRequirements: []
   - header: Prep Coolant Tank
@@ -137,7 +137,7 @@ MonoBehaviour:
   - header: Prep Coolant Tank
     text: "UIA: EV-1 SUPPLY WATER \u2013 CLOSE"
     switchRequirements:
-    - requiredSwitch: 2003
+    - requiredSwitch: 2
       state: 1
     valueRequirements: []
   - header: End Depress, Check Switches and Disconnect
@@ -153,49 +153,49 @@ MonoBehaviour:
   - header: End Depress, Check Switches and Disconnect
     text: "UIA: DEPRESS PUMP \u2013 OFF"
     switchRequirements:
-    - requiredSwitch: 2010
+    - requiredSwitch: 9
       state: 1
     valueRequirements: []
   - header: End Depress, Check Switches and Disconnect
     text: "DCU: BATT \u2013 PRI"
     switchRequirements:
-    - requiredSwitch: 2013
+    - requiredSwitch: 12
       state: 0
     valueRequirements: []
   - header: End Depress, Check Switches and Disconnect
     text: "DCU: BATT \u2013 LOCAL"
     switchRequirements:
-    - requiredSwitch: 2011
+    - requiredSwitch: 10
       state: 1
     valueRequirements: []
   - header: End Depress, Check Switches and Disconnect
     text: "UIA: EV-1 EMU PWR \u2013 OFF"
     switchRequirements:
-    - requiredSwitch: 2001
+    - requiredSwitch: 0
       state: 1
     valueRequirements: []
   - header: End Depress, Check Switches and Disconnect
     text: "DCU: FAN \u2013 PRI"
     switchRequirements:
-    - requiredSwitch: 2014
+    - requiredSwitch: 13
       state: 0
     valueRequirements: []
   - header: End Depress, Check Switches and Disconnect
     text: "DCU: PUMP \u2013 CLOSE"
     switchRequirements:
-    - requiredSwitch: 2015
+    - requiredSwitch: 14
       state: 1
     valueRequirements: []
   - header: End Depress, Check Switches and Disconnect
     text: "DCU: CO2 \u2013 PRI"
     switchRequirements:
-    - requiredSwitch: 2016
+    - requiredSwitch: 15
       state: 0
     valueRequirements: []
   - header: End Depress, Check Switches and Disconnect
     text: "DCU: Verify OXY \u2013 PRI"
     switchRequirements:
-    - requiredSwitch: 2012
+    - requiredSwitch: 11
       state: 0
     valueRequirements: []
     requireConfirm: 1

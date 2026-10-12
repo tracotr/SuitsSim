@@ -19,7 +19,7 @@ MonoBehaviour:
   - header: Off Nominal Suit Oxygen Pressure
     text: "DCU: OXY – SEC"
     switchRequirements:
-    - requiredSwitch: 2012
+    - requiredSwitch: 11
       state: 1
     valueRequirements: []
   - header: Off Nominal Suit Oxygen Pressure

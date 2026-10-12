@@ -19,6 +19,6 @@ MonoBehaviour:
   - header: Off Nominal Battery
     text: "DCU: BATT – SEC"
     switchRequirements:
-    - requiredSwitch: 2013
+    - requiredSwitch: 12
       state: 1
     valueRequirements: []

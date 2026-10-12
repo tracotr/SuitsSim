@@ -653,21 +653,13 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.y
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 6068426070038416216, guid: 5a956ee514ee348468a2131411b39bba, type: 3}
-      propertyPath: m_Radius
-      value: 0.52
-      objectReference: {fileID: 0}
     - target: {fileID: 6616968328492889487, guid: 5a956ee514ee348468a2131411b39bba, type: 3}
       propertyPath: m_Name
       value: DCUToggle
       objectReference: {fileID: 0}
-    - target: {fileID: 7086434292268205542, guid: 5a956ee514ee348468a2131411b39bba, type: 3}
-      propertyPath: m_Axis.y
-      value: -1
-      objectReference: {fileID: 0}
-    - target: {fileID: 8077863766681645861, guid: 5a956ee514ee348468a2131411b39bba, type: 3}
-      propertyPath: m_LocalScale.x
-      value: 0.3
+    - target: {fileID: 6930214485571739124, guid: 5a956ee514ee348468a2131411b39bba, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.5
       objectReference: {fileID: 0}
     - target: {fileID: 8077863766681645861, guid: 5a956ee514ee348468a2131411b39bba, type: 3}
       propertyPath: m_LocalPosition.x
@@ -675,7 +667,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8077863766681645861, guid: 5a956ee514ee348468a2131411b39bba, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0
+      value: -0.7071068
       objectReference: {fileID: 0}
     - target: {fileID: 8077863766681645861, guid: 5a956ee514ee348468a2131411b39bba, type: 3}
       propertyPath: m_LocalRotation.y
@@ -683,11 +675,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8077863766681645861, guid: 5a956ee514ee348468a2131411b39bba, type: 3}
       propertyPath: m_LocalRotation.z
-      value: -1
+      value: 0.7071068
       objectReference: {fileID: 0}
     - target: {fileID: 8077863766681645861, guid: 5a956ee514ee348468a2131411b39bba, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
-      value: 180
+      value: 270
       objectReference: {fileID: 0}
     - target: {fileID: 8077863766681645861, guid: 5a956ee514ee348468a2131411b39bba, type: 3}
       propertyPath: m_ConstrainProportionsScale
@@ -714,6 +706,14 @@ PrefabInstance:
     - target: {fileID: 8726396884299743155, guid: 5a956ee514ee348468a2131411b39bba, type: 3}
       propertyPath: m_fontSizeBase
       value: 0.1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4518806132519284007, guid: 5a956ee514ee348468a2131411b39bba, type: 3}
+      propertyPath: m_MaxAngle
+      value: -30
+      objectReference: {fileID: 0}
+    - target: {fileID: 4518806132519284007, guid: 5a956ee514ee348468a2131411b39bba, type: 3}
+      propertyPath: m_MinAngle
+      value: 30
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects:

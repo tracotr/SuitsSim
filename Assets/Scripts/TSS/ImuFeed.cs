@@ -1,12 +1,21 @@
 using UnityEngine;
 
-// Sends the headset's position (Unity metres, X/Z ground plane) and heading to the TSS each tick.
+// Sends the headset's position and heading to the TSS IMU every tick.
 public class ImuFeed : MonoBehaviour
 {
-    public Transform head; // XR Origin > Camera Offset > Main Camera
+    [Header("References")]
+    [Tooltip("Main camera of the XR Origin")]
+    [SerializeField] private Transform head;
+    
+    private void OnEnable()
+    {
+        TssSim.Instance.Ticked += Send;
+    }
 
-    private void Start() => TssSim.Instance.Ticked += Send;
-    private void OnDestroy() { if (TssSim.Instance) TssSim.Instance.Ticked -= Send; }
+    private void OnDisable()
+    {
+        TssSim.Instance.Ticked -= Send;
+    }
 
     private void Send()
     {

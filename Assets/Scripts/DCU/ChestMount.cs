@@ -3,78 +3,105 @@ using UnityEngine.XR.Interaction.Toolkit;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
 using UnityEngine.XR.Interaction.Toolkit.Interactors;
 
-// Keeps the DCU strapped to the chest: follows the head's position and facing (yaw only),
-// ignoring pitch/roll so looking down at it doesn't move it.
-// Grab the DCU body (pinch / grip) and move your hand up/down or forward/back to refit it.
+// Keeps the DCU on the player's chest, and lets them grab it to adjust its height and depth.
 [RequireComponent(typeof(Rigidbody))]
 public class ChestMount : MonoBehaviour
 {
-    public Transform head;                          // XR Origin > Camera Offset > Main Camera
-    public Vector3 offset = new(0f, -0.45f, 0.3f);  // metres below / in front of the eyes
-    public float tilt = 35f;                        // degrees the top faces up toward you
-    public float turnSpeed = 4f;                    // how fast it swings to your facing
+    [Header("References")]
+    [Tooltip("Reference to XR Origin main camera")]
+    [SerializeField] private Transform head;
 
-    [Header("Refit")]
-    [Tooltip("XRSimpleInteractable on the DCU body (not the toggles).")]
-    public XRSimpleInteractable grabHandle;
-    [Tooltip("Lowest / highest offset.y in metres below the eyes.")]
-    public Vector2 heightRange = new(-0.7f, -0.25f);
-    [Tooltip("Closest / farthest offset.z in metres in front of the eyes.")]
-    public Vector2 depthRange = new(-0.15f, 0.2f);
+    [Tooltip("Kinematic Rigidbody on this object.")]
+    [SerializeField] private Rigidbody rb;
 
-    private Rigidbody _rb;
+    [Tooltip("XRSimpleInteractable on the DCU body that is grabbed to adjust it.")]
+    [SerializeField] private XRSimpleInteractable chestMountInteractable;
+    
+    [Header("Position")]
+    [Tooltip("Offset of chest mount from main camera, should be in front of camera, and downwards")]
+    [SerializeField] private Vector3 offset = new(0f, -0.45f, 0.3f);
+
+    [Tooltip("Degrees the top of the chest mount faces")]
+    [SerializeField] private float tilt = -20f;
+
+    [Tooltip("How fast the chest mount follows the camera")]
+    [SerializeField] private float turnSpeed = 4f;
+
+    [Header("Adjusting")]
+    [Tooltip("Lowest / highest offset.y of chest mount below the eyes.")]
+    [SerializeField] private Vector2 heightRange = new(-0.7f, -0.25f);
+    
+    [Tooltip("Closest / farthest offset.z of chest mount in front of the eyes.")]
+    [SerializeField] private Vector2 depthRange = new(-0.15f, 0.2f);
+    
+    // runtime values
     private Vector3 _facing;
     private Transform _hand;
     private Vector3 _handStart, _offsetStart;
+    private bool Grabbed => _hand;
 
-    private void Awake()
+    private void OnEnable()
     {
-        _rb = GetComponent<Rigidbody>();
         _facing = Flat();
-
-        if (!grabHandle) return;
-        grabHandle.selectEntered.AddListener(OnGrab);
-        grabHandle.selectExited.AddListener(OnRelease);
+        
+        chestMountInteractable.selectEntered.AddListener(OnGrab);
+        chestMountInteractable.selectExited.AddListener(OnRelease);
     }
 
-    // Head forward flattened onto the ground. Looking straight down, forward is useless, so use head.up.
+    private void OnDisable()
+    {
+        chestMountInteractable.selectEntered.RemoveListener(OnGrab);
+        chestMountInteractable.selectExited.RemoveListener(OnRelease);
+    }
+
+    // Head forward flattened onto the ground, using head up when looking straight down.
     private Vector3 Flat()
     {
         var f = Vector3.ProjectOnPlane(head.forward, Vector3.up);
         if (f.sqrMagnitude < 0.1f) f = Vector3.ProjectOnPlane(head.up, Vector3.up);
         return f.normalized;
     }
-
-    // Hand relative to the head in the DCU's facing (yaw) frame, so walking, crouching or turning
-    // while holding it doesn't count: y = up/down, z = forward/back.
-    private Vector3 HandLocal() => Quaternion.Inverse(Quaternion.LookRotation(_facing, Vector3.up)) * (_hand.position - head.position);
-
+    
     private void OnGrab(SelectEnterEventArgs args)
     {
-        if (args.interactorObject is XRPokeInteractor) return; // touching it with a finger isn't a grab
-        _hand = args.interactorObject.GetAttachTransform(grabHandle);
+        if (args.interactorObject is XRPokeInteractor) return;
+        _hand = args.interactorObject.GetAttachTransform(chestMountInteractable);
         _handStart = HandLocal();
         _offsetStart = offset;
     }
-
+    
     private void OnRelease(SelectExitEventArgs args)
     {
-        if (!_hand || args.interactorObject.GetAttachTransform(grabHandle) != _hand) return;
+        if (!_hand || args.interactorObject.GetAttachTransform(chestMountInteractable) != _hand) return;
         _hand = null;
     }
 
+    // Hand position relative to the head in the DCU's facing, so walking or turning while holding it doesn't count.
+    private Vector3 HandLocal()
+    {
+        return Quaternion.Inverse(Quaternion.LookRotation(_facing, Vector3.up)) * (_hand.position - head.position);
+    } 
+
     private void FixedUpdate()
     {
-        if (_hand)
-        {
-            var moved = HandLocal() - _handStart;
-            offset.y = Mathf.Clamp(_offsetStart.y + moved.y, heightRange.x, heightRange.y);
-            offset.z = Mathf.Clamp(_offsetStart.z + moved.z, depthRange.x, depthRange.y);
-        }
-
+        HandleGrabbed();
+        FollowHead();
+    }
+    
+    private void HandleGrabbed()
+    {
+        if (!Grabbed) return;
+        
+        var moved = HandLocal() - _handStart;
+        offset.y = Mathf.Clamp(_offsetStart.y + moved.y, heightRange.x, heightRange.y);
+        offset.z = Mathf.Clamp(_offsetStart.z + moved.z, depthRange.x, depthRange.y);
+    }
+ 
+    private void FollowHead()
+    {
         _facing = Vector3.Slerp(_facing, Flat(), turnSpeed * Time.fixedDeltaTime);
         var yaw = Quaternion.LookRotation(_facing, Vector3.up);
-        _rb.MovePosition(head.position + yaw * offset);
-        _rb.MoveRotation(yaw * Quaternion.Euler(tilt, 0f, 0f));
+        rb.MovePosition(head.position + yaw * offset);
+        rb.MoveRotation(yaw * Quaternion.Euler(tilt, 0f, 0f));
     }
 }

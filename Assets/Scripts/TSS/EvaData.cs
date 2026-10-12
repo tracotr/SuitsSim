@@ -1,41 +1,43 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
+// Every EV1 telemetry value the TSS simulates; the defaults are the real TSS eva1.json values (⋮ → Reset restores them).
 [CreateAssetMenu(fileName = "EvaData", menuName = "TSS/Data/EvaData")]
 public class EvaData : ScriptableObject
 {
-    public TssField primaryBatteryLevel;
-    public TssField secondaryBatteryLevel;
+    public TssField primaryBatteryLevel = new("Primary Battery", TssFieldAlgo.Decay, start: 100, rate: 0.05f);
+    public TssField secondaryBatteryLevel = new("Secondary Battery", TssFieldAlgo.Decay, start: 100, rate: 0.05f);
 
-    public TssField primaryOxygenStorage;
-    public TssField secondaryOxygenStorage;
+    public TssField primaryOxygenStorage = new("Primary O2 Storage", TssFieldAlgo.Decay, start: 100, rate: 0.013f);
+    public TssField secondaryOxygenStorage = new("Secondary O2 Storage", TssFieldAlgo.Decay, start: 100, rate: 0.013f);
 
-    public TssField primaryOxygenPressure;
-    public TssField secondaryOxygenPressure;
+    public TssField primaryOxygenPressure = new("Primary O2 Pressure", TssFieldAlgo.Dependent);
+    public TssField secondaryOxygenPressure = new("Secondary O2 Pressure", TssFieldAlgo.Dependent);
 
-    public TssField suitPressureOxygen;
-    public TssField suitPressureCo2;
-    public TssField suitPressureOther;
-    public TssField suitPressureTotal;
-    public TssField helmetPressureCo2;
+    public TssField suitPressureOxygen = new("Suit O2 Pressure", TssFieldAlgo.Constant, min: 3, max: 4, rate: 0.26f);
+    public TssField suitPressureCo2 = new("Suit CO2 Pressure", TssFieldAlgo.Growth, max: 0.1f, rate: 0.001f);
+    public TssField suitPressureOther = new("Suit Other Pressure", TssFieldAlgo.Constant, max: 0.1f);
+    public TssField suitPressureTotal = new("Suit Total Pressure", TssFieldAlgo.Dependent);
+    public TssField helmetPressureCo2 = new("Helmet CO2 Pressure", TssFieldAlgo.Dependent);
 
-    public TssField primaryFanRpm;
-    public TssField secondaryFanRpm;
+    public TssField primaryFanRpm = new("Primary Fan", TssFieldAlgo.Constant, start: 30000, max: 30500, rate: 13574);
+    public TssField secondaryFanRpm = new("Secondary Fan", TssFieldAlgo.Constant, start: 30000, max: 30500, rate: 10);
 
-    public TssField scrubberACo2Storage;
-    public TssField scrubberBCo2Storage;
+    public TssField scrubberACo2Storage = new("Scrubber A", TssFieldAlgo.Growth, rate: 0.13f);
+    public TssField scrubberBCo2Storage = new("Scrubber B", TssFieldAlgo.Growth, rate: 0.13f);
 
-    public TssField temperature;
-    public TssField coolantStorage;
-    public TssField coolantGasPressure;
-    public TssField coolantLiquidPressure;
+    public TssField temperature = new("Temperature", TssFieldAlgo.Sine, start: 21.1f, min: -10, max: 40, baseV: 21.1f, amp: 5.1f, freq: 0.018f);
+    public TssField coolantStorage = new("Coolant Storage", TssFieldAlgo.Decay, rate: 0.05f);
+    public TssField coolantGasPressure = new("Coolant Gas Pressure", TssFieldAlgo.Dependent);
+    public TssField coolantLiquidPressure = new("Coolant Liquid Pressure", TssFieldAlgo.Sine, min: 480, max: 520, baseV: 500, amp: 2, freq: 0.015f);
 
-    public TssField heartRate;
-    public TssField oxygenConsumption;
-    public TssField co2Production;
+    public TssField heartRate = new("Heart Rate", TssFieldAlgo.Dependent);
+    public TssField oxygenConsumption = new("O2 Consumption", TssFieldAlgo.Dependent);
+    public TssField co2Production = new("CO2 Production", TssFieldAlgo.Dependent);
 
-    public TssField elapsedTime;
+    public TssField elapsedTime = new("Elapsed Time", TssFieldAlgo.Growth, max: 10000, rate: 1);
 
     public TssField Get(TssValue v) => v switch
     {
@@ -65,70 +67,42 @@ public class EvaData : ScriptableObject
         _ => throw new ArgumentOutOfRangeException(nameof(v)),
     };
 
-    // step order = TssValue order
+    // Every TssField in the same order every time for ticking.
     public IEnumerable<TssField> All()
     {
-        foreach (TssValue v in Enum.GetValues(typeof(TssValue))) yield return Get(v);
+        return from TssValue v in Enum.GetValues(typeof(TssValue)) select Get(v);
     }
-
-    // TS starting values
-    private void Reset()
-    {
-        primaryBatteryLevel = F("Primary Battery", TssFieldAlgo.Decay, start: 100, rate: 0.05f);
-        secondaryBatteryLevel = F("Secondary Battery", TssFieldAlgo.Decay, start: 100, rate: 0.05f);
-        primaryOxygenStorage = F("Primary O2 Storage", TssFieldAlgo.Decay, start: 100, rate: 0.013f);
-        secondaryOxygenStorage = F("Secondary O2 Storage", TssFieldAlgo.Decay, start: 100, rate: 0.013f);
-        primaryOxygenPressure = F("Primary O2 Pressure", TssFieldAlgo.Dependent);
-        secondaryOxygenPressure = F("Secondary O2 Pressure", TssFieldAlgo.Dependent);
-        suitPressureOxygen = F("Suit O2 Pressure", TssFieldAlgo.Constant, min: 3, max: 4, rate: 0.26f);
-        suitPressureCo2 = F("Suit CO2 Pressure", TssFieldAlgo.Growth, max: 0.1f, rate: 0.001f);
-        suitPressureOther = F("Suit Other Pressure", TssFieldAlgo.Constant, max: 0.1f);
-        suitPressureTotal = F("Suit Total Pressure", TssFieldAlgo.Dependent);
-        helmetPressureCo2 = F("Helmet CO2 Pressure", TssFieldAlgo.Dependent);
-        primaryFanRpm = F("Primary Fan", TssFieldAlgo.Constant, start: 30000, max: 30500, rate: 13574);
-        secondaryFanRpm = F("Secondary Fan", TssFieldAlgo.Constant, start: 30000, max: 30500, rate: 10);
-        scrubberACo2Storage = F("Scrubber A", TssFieldAlgo.Growth, rate: 0.13f);
-        scrubberBCo2Storage = F("Scrubber B", TssFieldAlgo.Growth, rate: 0.13f);
-        temperature = F("Temperature", TssFieldAlgo.Sine, start: 21.1f, min: -10, max: 40, baseV: 21.1f, amp: 5.1f, freq: 0.018f);
-        coolantStorage = F("Coolant Storage", TssFieldAlgo.Decay, rate: 0.05f);
-        coolantGasPressure = F("Coolant Gas Pressure", TssFieldAlgo.Dependent);
-        coolantLiquidPressure = F("Coolant Liquid Pressure", TssFieldAlgo.Sine, min: 480, max: 520, baseV: 500, amp: 2, freq: 0.015f);
-        heartRate = F("Heart Rate", TssFieldAlgo.Dependent);
-        oxygenConsumption = F("O2 Consumption", TssFieldAlgo.Dependent);
-        co2Production = F("CO2 Production", TssFieldAlgo.Dependent);
-        elapsedTime = F("Elapsed Time", TssFieldAlgo.Growth, max: 10000, rate: 1);
-    }
-
-    private static TssField F(string name, TssFieldAlgo algo, float start = 0, float min = 0, float max = 100,
-        float rate = 0, float baseV = 0, float amp = 0, float freq = 0) => new TssField
-    {
-        name = name, algo = algo, start = start, min = min, max = max,
-        rate = rate, baseV = baseV, amp = amp, freq = freq,
-    };
 }
 
-// One entry per EvaData field, in step order (plain values step before the formulas that read them).
 public enum TssValue
 {
     PrimaryBatteryLevel,
     SecondaryBatteryLevel,
+
     PrimaryOxygenStorage,
     SecondaryOxygenStorage,
+
     PrimaryOxygenPressure,
     SecondaryOxygenPressure,
+
     SuitPressureOxygen,
     SuitPressureCo2,
     SuitPressureOther,
     SuitPressureTotal,
     HelmetPressureCo2,
+
     PrimaryFanRpm,
     SecondaryFanRpm,
+
     ScrubberACo2Storage,
     ScrubberBCo2Storage,
+
     Temperature,
+
     CoolantStorage,
     CoolantGasPressure,
     CoolantLiquidPressure,
+
     HeartRate,
     OxygenConsumption,
     Co2Production,
@@ -144,16 +118,60 @@ public enum TssFieldAlgo
     Constant
 }
 
+// One telemetry value and how it changes each second.
 [Serializable]
 public class TssField
 {
-    public string name; // display label
+    [Tooltip("Display name of the value.")]
+    public string name;
+
+    [Tooltip("How the value changes each second.")]
     public TssFieldAlgo algo;
-    public float start, min, max = 100f, rate, baseV, amp, freq;
 
-    // Runtime state
+    [Tooltip("Value at the start of the EVA (Sine starts at Base V, Dependent at 0).")]
+    public float start;
+
+    [Tooltip("Decay stops here.")]
+    public float min;
+
+    [Tooltip("Growth stops here.")]
+    public float max = 100f;
+
+    [Tooltip("Change per second for Decay and Growth.")]
+    public float rate;
+
+    [Tooltip("Center of the Sine wave.")]
+    public float baseV;
+
+    [Tooltip("Height of the Sine wave.")]
+    public float amp;
+
+    [Tooltip("Sine phase step per second.")]
+    public float freq;
+
+    public event Action<float> OnValueChanged;
+
+    public TssField() { }
+
+    public TssField(string name, TssFieldAlgo algo, float start = 0, float min = 0, float max = 100,
+        float rate = 0, float baseV = 0, float amp = 0, float freq = 0)
+    {
+        this.name = name;
+        this.algo = algo;
+        this.start = start;
+        this.min = min;
+        this.max = max;
+        this.rate = rate;
+        this.baseV = baseV;
+        this.amp = amp;
+        this.freq = freq;
+    }
+
+    // runtime values
     [NonSerialized] public TssFieldAlgo StartAlgo;
-
+    [NonSerialized] public float StartRate, StartMin, StartMax, Phase;
+    [NonSerialized] public bool Active = true;
+    [NonSerialized] public Func<float> Formula;
     [NonSerialized] private float _value;
 
     public float Value
@@ -166,13 +184,7 @@ public class TssField
             OnValueChanged?.Invoke(_value);
         }
     }
-
-    [NonSerialized] public Action<float> OnValueChanged;
-
-    [NonSerialized] public float StartRate, StartMin, StartMax, Phase;
-    [NonSerialized] public bool Active = true;
-    [NonSerialized] public Func<float> Formula;
-
+    
     public void Init()
     {
         StartAlgo = algo;
@@ -204,6 +216,7 @@ public class TssField
         rate = newRate;
     }
 
+    // Advances the value by one second.
     public void Step()
     {
         if (!Active) return;
@@ -212,11 +225,20 @@ public class TssField
             case TssFieldAlgo.Sine:
                 Value = baseV + amp * Mathf.Sin(Phase);
                 Phase += freq;
-                if (Phase > 2f * Math.PI) Phase = 0f;
+
+                if (Phase > 2f * Math.PI)
+                    Phase = 0f;
                 break;
-            case TssFieldAlgo.Decay: Value = Mathf.Max(Value - rate, min); break;
-            case TssFieldAlgo.Growth: Value = Mathf.Min(Value + rate, max); break;
-            case TssFieldAlgo.Dependent: Value = Formula?.Invoke() ?? Value; break;
+
+            case TssFieldAlgo.Decay:
+                Value = Mathf.Max(Value - rate, min); break;
+
+            case TssFieldAlgo.Growth:
+                Value = Mathf.Min(Value + rate, max); break;
+
+            case TssFieldAlgo.Dependent:
+                Value = Formula?.Invoke() ?? Value; break;
+
             case TssFieldAlgo.Constant:
                 break;
             default:

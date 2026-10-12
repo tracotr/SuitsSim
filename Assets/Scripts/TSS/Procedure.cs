@@ -1,76 +1,114 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "Procedure", menuName = "TSS/Procedure")]
+// A full procedure, e.g. egress, ingress or a POI task.
+[CreateAssetMenu(fileName = "New Procedure", menuName = "TSS/Procedure")]
 public class Procedure : ScriptableObject
 {
+    [Tooltip("Name shown on the HUD and task list")]
     public string title = "Default Procedure Title";
+
+    [Tooltip("What this procedure is for")]
     public string description = "Default Procedure Description";
+
     [Tooltip("Urgent procedures (errors) pause whatever is running and take over.")]
     public ProcedurePriority priority = ProcedurePriority.Normal;
+
+    [Tooltip("List of procedure steps in order")]
     public List<ProcedureStep> steps = new();
 }
 
-public enum ProcedurePriority { Normal, Urgent }
+public enum ProcedurePriority
+{
+    Normal, Urgent
+}
 
+// One step, it passes once its requirements are met or CAPCOM confirms it.
 [Serializable]
 public class ProcedureStep
 {
+    [Tooltip("Section this step belongs to, e.g. Prep O2 Tanks")]
     public string header = "Procedure Step Header";
+
+    [Tooltip("What the step tells the astronaut to do")]
     public string text = "Procedure Step Text";
+
+    [Tooltip("The requirements for which switches should be flipped for this step to pass.")]
     public List<SwitchReq> switchRequirements = new();
+
+    [Tooltip("The requirements for what values should be for this step to pass.")]
     public List<ValueReq> valueRequirements = new();
-    [Tooltip("Wait for Confirm even once the requirements are met (verify / check steps the tester signs off).")]
+
+    [Tooltip("Require for a manual confirmation/proceed from capcom")]
     public bool requireConfirm;
 
-    // No requirements = manual step, done on Confirm.
-    public bool IsManual => switchRequirements.Count == 0 && valueRequirements.Count == 0;
+    public bool HasRequirements => switchRequirements.Count > 0 || valueRequirements.Count > 0;
 
-    // Done without anyone pressing Confirm.
-    public bool CompletesOnItsOwn(TssSim sim) => !requireConfirm && IsMet(sim);
+    // Manual steps wait for Confirm.
+    public bool IsManual => requireConfirm || !HasRequirements;
 
-    // Confirm is allowed: a manual step, or a confirm step whose requirements are met.
-    public bool CanConfirm(TssSim sim) => IsManual || (requireConfirm && IsMet(sim));
+    public bool CompletesOnItsOwn => !IsManual && RequirementsMet();
 
-    // Call when the step becomes current, so Flip requirements know the starting position.
-    public void Begin(TssSim sim)
+    // A confirm step can only be confirmed once its requirements are met.
+    public bool CanConfirm => !HasRequirements || (requireConfirm && RequirementsMet());
+
+    public void StartStep()
     {
-        foreach (var r in switchRequirements) r.Begin(sim);
+        foreach (var r in switchRequirements) r.SaveStartState();
     }
 
-    public bool IsMet(TssSim sim)
+    public bool RequirementsMet()
     {
-        if (IsManual) return false;
-        foreach (var r in switchRequirements) if (!r.IsMet(sim)) return false;
-        foreach (var r in valueRequirements) if (!r.IsMet(sim.Eva1)) return false;
+        if (!HasRequirements) return false;
+
+        if (switchRequirements.Any(r => !r.RequirementMet()))
+        {
+            return false;
+        }
+
+        if (valueRequirements.Any(r => !r.RequirementMet()))
+        {
+            return false;
+        }
+
         return true;
     }
 
-    // True if this step expects `s` to be where it is now. Anything else is an out-of-order flip.
-    public bool Expects(TssSwitch s, TssSim sim)
+    // Anything this returns false for is an out-of-order flip.
+    public bool ExpectsSwitch(TssSwitch s)
     {
-        foreach (var r in switchRequirements) if (r.requiredSwitch == s && r.IsMet(sim)) return true;
-        return false;
+        return switchRequirements.Any(r => r.requiredSwitch == s && r.RequirementMet());
     }
 }
 
-public enum SwitchState { On, Off, Flip }
+public enum SwitchState
+{
+    On, Off, Flip
+}
 
 [Serializable]
 public class SwitchReq
 {
+    [Tooltip("The TSS switch this requirement checks")]
     public TssSwitch requiredSwitch;
+
     [Tooltip("On/Off: switch must be in that position. Flip: must differ from where it was when the step started.")]
     public SwitchState state = SwitchState.On;
 
+    // runtime values
     [NonSerialized] private bool _startValue;
 
-    public void Begin(TssSim sim) => _startValue = sim.GetSwitch(requiredSwitch);
-
-    public bool IsMet(TssSim sim)
+    // Flip needs to know where the switch started.
+    public void SaveStartState()
     {
-        bool on = sim.GetSwitch(requiredSwitch);
+        _startValue = TssSim.Instance.GetSwitch(requiredSwitch);
+    }
+
+    public bool RequirementMet()
+    {
+        bool on = TssSim.Instance.GetSwitch(requiredSwitch);
         return state switch
         {
             SwitchState.On => on,
@@ -80,18 +118,26 @@ public class SwitchReq
     }
 }
 
-public enum Compare { Below, Above }
+public enum Compare
+{
+    Below, Above
+}
 
 [Serializable]
 public class ValueReq
 {
+    [Tooltip("The TSS telemetry value this requirement checks")]
     public TssValue value;
+
+    [Tooltip("If the value should be below or above the threshold")]
     public Compare compare = Compare.Above;
+
+    [Tooltip("The value to compare against")]
     public float threshold;
 
-    public bool IsMet(EvaData eva)
+    public bool RequirementMet()
     {
-        float v = eva.Get(value).Value;
+        float v = TssSim.Instance.Eva1.Get(value).Value;
         return compare == Compare.Above ? v > threshold : v < threshold;
     }
 }

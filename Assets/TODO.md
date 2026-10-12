@@ -9,7 +9,8 @@ Key scripts (`Assets/Scripts/`):
 - `TSS/TssSim.cs` — the simulated TSS (singleton, no JSON). `GetSwitch` / `SetSwitch(TssSwitch, bool)`, `Eva1.Get(TssValue)`, error flags, `Ticked` / `SwitchChanged` events, `Advance(seconds)`
 - `TSS/EvaData.cs` — telemetry fields as a ScriptableObject (`Assets/Resources/EvaData.asset`), `TssValue` enum
 - `TSS/Procedure.cs` + `TSS/ProcedureRunner.cs` — procedure assets and the step runner
-- `TSS/TssToggle.cs` — physical switch (poke or controller select)
+- `TSS/TssToggle.cs` — connects an `XRLever` (grab and drag) to its TSS switch
+- `Imports/XRContent/XRLever.cs` — lever interactable copied unchanged from Unity's VR Template
 - `DCU/ChestMount.cs` — keeps the DCU on the player's chest
 
 ---
@@ -28,14 +29,14 @@ Goal: stand at the lander in VR with the TSS running.
 - [x] Graybox lander at Unity origin, with airlock door and a wall for the UIA
 - [x] Movement (no controllers)
   - [x] Room-scale walking
-  - [x] Hand-gesture teleport (HandTeleportInteractor from the Hands demo): "finger gun" pose shows the ray, pinch to lock, release to teleport, open hand cancels
+  - [x] Hand-gesture teleport (HandTeleportInteractor from the Hands demo): palm-up pose activates it, pinch to lock, release to teleport, open hand cancels
+    - **Changed:** the ray is aimed by the head, not the hand (Ray Origin Transform = Main Camera), and the line is hidden (Line Width 0, Cast Shadows = Shadows Only); only the reticle shows
     - Line renderers need a URP material (Single Pass Instanced draws legacy shaders in one eye only)
     - Rig teleport Release Threshold 0.2 (stock 0.01 lags over Link)
-  - [x] Cap teleport distance (Max Raycast Distance 4 m) so breadcrumbs and EVA time stay meaningful
-  - [ ] Teleport ray origin: point it out of a straight index finger that doesn't move when pinching
-    - Empty `Teleport Ray Origin` under the hand's palm / index-metacarpal joint (rigid with the hand, not the curling finger joints), blue Z along a straight finger → set as the XR Ray Interactor's **Ray Origin Transform** (currently `Aim Pose`)
-    - Move HandTeleportInteractor from `Right Hand` to `Camera Offset` (its own Tracked Pose Driver stacks on Right Hand's tracking)
-    - Palm-up activation condition is 25° (sample: 50°): loosen or remove if the pose is awkward
+  - [x] Cap teleport distance so breadcrumbs and EVA time stay meaningful
+    - **Changed:** 4 m → 10 m (Max Raycast Distance), because a 4 m ray from head height only reaches ~3.6 m of floor
+  - [x] ~~Teleport ray origin out of a straight index finger~~ **Changed:** replaced by head aim (above), so the pinch can't move the ray
+    - Palm-up activation tolerance is 50°, and the gesture has a 0.35 s lose-shape grace
 - [x] Desktop testing: XR Interaction Simulator sample imported (disable it before using the headset)
 
 **Done when:** play mode loads clean, hands are visible, you can move around, TssSim › Self Test logs "passed".
@@ -47,16 +48,20 @@ Goal: every physical switch exists in VR and talks to the TSS.
 
 - [x] Reusable switch component: `TssToggle` (UIAToggle / DCUToggle prefabs)
   - [x] `sw` field = `TssSwitch` enum, grouped dropdown (`UIA/EVA 1/O2 (Open)`, `DCU/EVA 1/Fan (PRI)`…; the word in brackets is what On means)
-  - [x] Finger poke flips the sprung hinge lever
-  - [x] Controller / simulator: Select (grip) flips it
+  - [x] Levers are `XRLever` on the Pivot (Handle child rotates around Pivot X, Min/Max Angle ±30, Lock To Value); grab or pinch and drag past the middle to flip, no physics
+    - **Changed:** was a finger-poke push on a sprung HingeJoint. Poke (with and without a poke filter), physics finger colliders and hinge physics were tried and dropped: brushes flipped switches, a finger behind the lever dragged it back, the base could be pushed, and DCU motion flipped levers
+  - Rule: everything above a lever's Handle must have uniform scale (non-uniform scale above a rotating object shears the mesh but not the collider). Shape the lever with the Capsule / Handle scale. The UIA panel is (0.5, 1, 1), so each UIA toggle is scaled X ×2 and its Capsule / Base / Pivot X halved to look the same
+  - [x] Grabbed lever holds the drawn hand: `Hands/LeverHandSnap` on Left / Right Hand in the rig slides both hand visuals so the pinch point stays on the lever (fingers stay tracked)
+  - [x] Controller / simulator: grip grabs the lever and drags it, same as a hand
+    - **Changed:** was "Select flips it"; there's no click-to-flip any more
   - [x] Board always shows TSS truth (`SwitchChanged` read-back, starts from `GetSwitch`)
   - [x] Click sound
-  - [x] Controller can reach toggles: physics layer **Toggle** added to the Near-Far near/far caster masks in `Left_NearFarInteractor.prefab` (XRI sample — redo if the sample is re-imported)
+  - [x] Controller can reach toggles: physics layer **Toggle** is on the Near-Far **near** caster mask only (far ray can't grab levers), and the near grab radius is 3 cm (sample: 10 cm, which grabbed levers from their labels) in `Left_NearFarInteractor.prefab` (XRI sample — redo if the sample is re-imported)
 - [ ] UIA panel on lander wall
   - [x] EVA 1: EMU PWR (2001), O2 (2002), SUPPLY (2003), WASTE (2004)
   - [x] O2 VENT (2009), DEPRESS PUMP (2010)
   - [ ] EVA 2: EMU PWR, O2, SUPPLY, WASTE (2005–2008), no sim effect yet
-- [x] DCU on the player's chest (`DCU.prefab`, `ChestMount`: follows head position + yaw only, kinematic Rigidbody, hinges connected to it)
+- [x] DCU on the player's chest (`DCU.prefab`, `ChestMount`: follows head position + yaw only, kinematic Rigidbody)
   - [x] All six toggles assigned; On tilts toward the outer label (PRI / UMB / OPEN), off = SEC / LOCAL / CLOSE (TSS default)
 
   | Toggle | Switch | On | Off |
@@ -68,12 +73,13 @@ Goal: every physical switch exists in VR and talks to the TSS.
   | PUMP | `DcuEva1Pump` 2015 | OPEN | CLOSE |
   | CO2 (bottom) | `DcuEva1Co2` 2016 | PRI | SEC |
 
-  - Left side is a mirrored *layout* (label strip moved to the other side, hinge axis +1), not negative scale (breaks hinges)
+  - Left side is a mirrored *layout* (label strip moved to the other side, XRLever Max/Min Angle +30/−30 instead of DCUToggle's −30/+30), not negative scale
 - [x] DCU refit: grab the DCU body (pinch / grip) and drag it up/down to fit the user's chest height
   - [x] Grab moves `ChestMount.offset.y` / `.z` (clamped by `heightRange` -0.7…-0.25 m, `depthRange` -0.15…0.2 m), not the transform directly
 - [X] Switch visual feedback
-  - [x] Hover highlight when a fingertip / ray is on a lever (`TssToggle.hoverColor`, URP `_BaseColor` tint)
-  - [x] Detent feel (hands, no haptics): lever resists the push (`give`), snaps over once past center; click on flip
+  - [x] Hover highlight when a hand or controller is near a lever (`TssToggle.hoverColor`, URP `_BaseColor` tint)
+    - **Changed:** far rays no longer hover or grab levers (Toggle layer is near caster only)
+  - [x] Snap feel: XRLever snaps to the nearest end on release; click on flip
   - [x] Blink red when the ProcedureRunner flags that switch as unexpected (`UnexpectedSwitch` event, `TssToggle.warningColor` / `warningTime`)
 - [X] Emissive labels readable in low light
 
@@ -90,7 +96,8 @@ Notes:
 Goal: egress completes with no false alarms.
 
 - [x] Rewrite as `TssSim` + `EvaData` ScriptableObject (no JSON), EV1 only, real TSS quirks kept
-- [x] `TssSwitch` enum (values = real command numbers 2001–2016; EV1 DCU only, like the TSS), `TssValue` enum + `EvaData.Get`
+- [x] `TssSwitch` enum (EV1 DCU only, like the TSS), `TssValue` enum + `EvaData.Get`
+  - **Changed:** the enum has no numbers any more; the 2001–2016 numbers in this file are just the real TSS command numbers for reference
 - [x] Fix: formula fields (tank pressure, suit total…) computed in `Awake` / `ResetEva`, not 0 until the first tick
 - [x] Coolant fill/drain verified (starts 0%, fills > 95% in ~17 s with PUMP + SUPPLY)
 - [x] Battery primary/secondary (2013) kept — power fault needs it
@@ -106,13 +113,15 @@ Goal: first complete playable slice.
 - [x] `Procedure` ScriptableObject (Create → TSS → Procedure) instead of JSON
   - Step = header + text + `SwitchReq` (On / Off / Flip) + `ValueReq` (`TssValue` Below / Above threshold); no requirements = manual Confirm
 - [x] `ProcedureRunner`
-  - [x] Auto-advance on `SwitchChanged` and `Ticked`; steps already met pass straight through ("Verify OXY – PRI")
+  - [x] Auto-advance on `SwitchChanged`, and wait steps on their own fields' `OnValueChanged`; steps already met pass straight through ("Verify OXY – PRI")
+    - **Changed:** no `Ticked` polling (see "Stop polling" below)
   - [x] "Unexpected: …" warning on out-of-order flips (warn only, never blocks)
   - [x] Urgent error procedures interrupt and resume the paused one at the same step
   - [x] Progress kept per procedure: switch away and back without losing your place
   - [x] Self Test: plays egress, throws a fan fault mid-run, checks resume, zero warnings
-  - [x] Tester sign-off: manual steps (verify / announce / return to PR) and steps with `requireConfirm` (e.g. Verify OXY – PRI) wait for Confirm — ProcedureRunner ⋮ → Confirm / Skip / Back Step
-  - [x] Complete Egress (⋮): plays egress live on the boards, 0.3 s per step
+  - [x] Tester sign-off: manual steps (verify / announce / return to PR) and steps with `requireConfirm` (e.g. Verify OXY – PRI) wait for Confirm — Confirm / Skip / Back buttons in the ProcedureRunner Inspector
+  - [x] Complete Egress (Inspector button): plays egress live on the boards, 0.3 s per step
+  - [x] Custom Inspectors (`Assets/Scripts/Editor/`): live step list, TSS status / switches (click to flip) / telemetry, test + fault buttons — test code lives there, not in the runtime scripts
 - [x] `Eva1Egress.asset` — 31 steps, cross-checked against the PDF and replayed against the sim (~3 min)
   - [x] Step 21 text fixed; re-checked against the PDF (3/2/2026 version): all 31 steps match
 - [ ] Task list UI
@@ -120,7 +129,13 @@ Goal: first complete playable slice.
   - [ ] Wrist panel (left or right wrist, shown when raised toward the head): scrollable step list, headers only when they change, done = dim, current = highlighted; Confirm / Back / Skip buttons
   - No live values in the task list — those come from the telemetry display (Phase 6)
 - [x] EVA telemetry starts before egress (CAPCOM "START EVA Telemetry"): ProcedureRunner's CAPCOM setup calls `StartEva()` — vent/fill/coolant need it running
-- [ ] Debug: Time Scale (Project Settings → Time) to fast-forward waits; optional debug panel to flip any `TssSwitch` without VR
+- [ ] Debug: Time Scale (Project Settings → Time) to fast-forward waits
+  - [x] Flip any `TssSwitch` without VR: TssSim Inspector switch list (click to flip)
+- [x] Stop polling the TSS every tick: subscribe to events instead
+  - [x] `TssSim.ErrorChanged` event, raised only when an error flag flips; `ProcedureRunner` starts error procedures from it
+  - [x] Wait steps re-check on their `ValueReq` fields' `TssField.OnValueChanged`, not on `Ticked`
+  - [ ] New views (task list, C&W banner, telemetry display) subscribe from the start: never read `TssSim` in `Update`
+- [x] Refactor the code for readability (style: references → settings → runtime values, `[SerializeField] private` + tooltips, OnEnable/OnDisable subscriptions, events over reading values)
 
 Notes:
 - Tank pressure caps at exactly 3000, so thresholds use > 2950 (as in the PDF), never > 3000.
@@ -176,9 +191,11 @@ Goal: the JSC rock yard, worth navigating.
   - [ ] Daytime HDRI sky (clear, flat open ground; Poly Haven) → Skybox/Cubemap material → Lighting › Environment, Generate Lighting
   - [ ] Directional Light 1.5–2.5, sun direction matched to the HDRI; set it as Sun Source
   - [ ] Check the real test-session time of day (evening / work lights → different sky)
-- [ ] Suit headlamp / helmet lights (if testing in low light)
+  - [ ] Skybox rotates realistically: one turn per sidereal day (~0.0042°/s) via the skybox material's `_Rotation`, with the directional light (sun) rotated to match
+- [x] Suit headlamp: `Head Lamp` spot light in MainScene, `Suit/HeadLamp.cs` keeps it on the right side of the helmet aimed where the head looks (offset / aim in the Inspector)
 - [ ] 3–5 POIs in a loop from the lander: `{ id, position, payloadType }`, known ahead of time
 - [ ] Teleportation Anchors at each POI and the lander (for voice teleport later)
+- [ ] Align the Unity world with the TSS rock-yard frame (X −5765…−5545, Y −10075…−9940): `ImuFeed` sends rock-yard coordinates (Unity origin + offset), not raw Unity metres, so map and pathfinding work on the same numbers the real TSS sends
 
 **Done when:** you can walk the loop to every POI and back.
 
@@ -193,7 +210,15 @@ Goal: reach POIs and get home safely.
 - [ ] Drop pins at any time (voice / gesture / menu), labelled
 - [ ] Breadcrumbs: record every few metres, draw trail, "retrace to lander"
 - [ ] POI pins + route order
-- [ ] Should: best path around hazards (NavMesh on terrain)
+- [ ] Should: best path around hazards. No NavMesh: it has to work like the real system, which only has NASA's maps and the TSS position
+  - [ ] Offline bake (editor script, run once like a team would before test week) → grid asset in rock-yard coordinates, ~0.5 m cells (~440 × 270)
+    - [ ] Keep-out mask from `TSS2026/documents/maps/annotated/rock-yard-keep-out-zones.tiff`: crop the black frame, detect the red hatching, close the gaps between hatch lines so each zone becomes solid, map pixels → rock-yard coordinates from the map's corner coordinates
+    - [ ] Heightmap from `TSS2026/documents/3d-scans/lunar.obj`: sample the mesh into the same grid → slope per cell; slopes over a limit are blocked, gentler slopes cost more
+    - [ ] Inflate blocked cells by a safety margin (~1 m)
+  - [ ] `HazardGrid` (plain C#): loads the baked grid; dropped hazard pins add blocked circles at runtime
+  - [ ] `PathPlanner` (plain C#, no UnityEngine physics): A*, 8-connected, octile heuristic, step cost = distance × cell cost; smooth the result with line-of-sight shortcuts; returns waypoints in rock-yard coordinates
+  - [ ] `NavigationAid`: start = `TssSim.PosX / PosY`; replan on `Ticked` only when the player is > 3 m off the route, plus when hazards or the destination change; minimap and ground line just draw the waypoints
+  - [ ] Self test: route never crosses a blocked cell; dropping a hazard pin on the route makes it detour
 - [ ] Should: nav aids to next POI (bearing, distance, ground line)
 
 **Done when:** you can reach every POI using only the map, drop pins anywhere, and breadcrumb home.
@@ -268,7 +293,7 @@ Goal: the work at each station. Build flows now; swap in real telemetry when NAS
 ---
 
 ## Milestones
-- **Phases 1–5** — playable egress with faults (first target) — TSS, runner, egress and error procedures done; next: task list UI, teleport ray origin, DCU refit, switch feedback
+- **Phases 1–5** — playable egress with faults (first target) — TSS, runner, egress, error procedures, DCU refit, switch feedback and head-aim teleport done; next: test the XRLever levers in VR, task list UI, C&W alerts, EVA 2 UIA switches
 - **Phases 6–9** — full mission loop
 - **Phases 10–12** — remaining shall requirements + POI work
 - **Phase 13** — stretch goals

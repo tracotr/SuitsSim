@@ -19,7 +19,7 @@ MonoBehaviour:
   - header: Off Nominal Primary Fan
     text: "DCU: FAN – SEC"
     switchRequirements:
-    - requiredSwitch: 2014
+    - requiredSwitch: 13
       state: 1
     valueRequirements: []
   - header: Off Nominal Primary Fan
