@@ -57,7 +57,6 @@ public class ProcedureRunner : MonoBehaviour
 
     private TssSim _sim;
     private Procedure _normal;
-    private ProcedureStep _watchedStep;
     private readonly Stack<Procedure> _urgent = new();
     private readonly Dictionary<Procedure, int> _progress = new();
 
@@ -72,14 +71,15 @@ public class ProcedureRunner : MonoBehaviour
         _sim = TssSim.Instance;
         _sim.SwitchChanged += OnSwitchChanged;
         _sim.ErrorChanged += OnErrorChanged;
+        _sim.Ticked += OnTicked;
     }
 
     private void OnDisable()
     {
-        WatchValues(null);
         if (!_sim) return;
         _sim.SwitchChanged -= OnSwitchChanged;
         _sim.ErrorChanged -= OnErrorChanged;
+        _sim.Ticked -= OnTicked;
     }
 
     private void Start()
@@ -114,13 +114,6 @@ public class ProcedureRunner : MonoBehaviour
         else Enter();
     }
 
-    public void Restart(Procedure p)
-    {
-        if (!p) return;
-        _progress[p] = 0;
-        Begin(p);
-    }
-
     public void Confirm()
     {
         if (CurrentStep is { CanConfirm: true }) Advance();
@@ -136,7 +129,6 @@ public class ProcedureRunner : MonoBehaviour
         if (!Current || Index == 0) return;
         _progress[Current]--;
         CurrentStep.StartStep();
-        WatchValues(CurrentStep);
         Changed?.Invoke();
     }
 
@@ -145,7 +137,6 @@ public class ProcedureRunner : MonoBehaviour
         _urgent.Clear();
         _normal = null;
         _progress.Clear();
-        WatchValues(null);
         Changed?.Invoke();
     }
 
@@ -177,20 +168,10 @@ public class ProcedureRunner : MonoBehaviour
         if (p) Push(p, restart: true);
     }
 
-    private void OnWatchedValueChanged(float value)
+    // Wait steps (tanks filling, coolant draining) finish on a sim tick.
+    private void OnTicked()
     {
         if (CurrentStep is { CompletesOnItsOwn: true }) Advance();
-    }
-
-    // Listens only to the telemetry values the current step waits on.
-    private void WatchValues(ProcedureStep step)
-    {
-        if (_watchedStep == step) return;
-        if (_watchedStep != null && _sim)
-            foreach (var r in _watchedStep.valueRequirements) _sim.Eva1.Get(r.value).OnValueChanged -= OnWatchedValueChanged;
-        _watchedStep = step;
-        if (_watchedStep != null)
-            foreach (var r in _watchedStep.valueRequirements) _sim.Eva1.Get(r.value).OnValueChanged += OnWatchedValueChanged;
     }
 
     private void Push(Procedure p, bool restart)
@@ -218,7 +199,6 @@ public class ProcedureRunner : MonoBehaviour
             if (!step.CompletesOnItsOwn) break;
             _progress[Current]++;
         }
-        WatchValues(CurrentStep);
         Changed?.Invoke();
     }
 

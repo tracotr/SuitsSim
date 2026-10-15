@@ -49,7 +49,7 @@ Rule for new views (task list, C&W, telemetry, minimap): subscribe to events fro
   - [x] Levers are `XRLever` on the Pivot (Pivot → Handle → Capsule; Handle rotates around Pivot X, Min/Max Angle ±30, Lock To Value); grab or pinch and drag past the middle to flip, no physics
     - **Changed:** was a finger-poke push on a sprung HingeJoint. Poke (with and without a poke filter), physics finger colliders and hinge physics were tried and dropped: brushes flipped switches, a finger behind the lever dragged it back, the base could be pushed, and DCU motion flipped levers
   - Rule: everything above a lever's Handle must have uniform scale (non-uniform scale above a rotating object shears the mesh but not the collider). Shape the lever with the Capsule / Handle scale. The UIA panel is (0.5, 1, 1), so each UIA toggle is scaled X ×2 and its Capsule / Base / Pivot X halved to look the same
-  - [x] Grabbed lever holds the drawn hand: `Hands/LeverHandSnap` on Left / Right Hand in the rig slides both hand visuals so the pinch point stays on the lever (fingers stay tracked); pulling the real hand > 12 cm away lets go
+  - [x] Grabbed lever holds the drawn hand: `Hands/LeverHandSnap` on Left / Right Hand in the rig slides both hand visuals so the pinch point stays on the lever (fingers stay tracked)
   - [x] Controller / simulator: grip grabs the lever and drags it, same as a hand
     - **Changed:** was "Select flips it"; there's no click-to-flip any more
   - [x] Board always shows TSS truth (`SwitchChanged` read-back, starts from `GetSwitch`)
@@ -91,15 +91,15 @@ Notes:
 - [x] Coolant fill/drain verified (starts 0%, fills > 95% in ~17 s with PUMP + SUPPLY)
 - [x] Battery primary/secondary (2013) kept — power fault needs it
 - [x] Self Test passes (vent, both tank fills, coolant, suit O2 = 4, fan + O2 faults, reset)
-- [x] Stop polling the TSS every tick: `TssSim.ErrorChanged` starts error procedures; wait steps re-check on their fields' `TssField.OnValueChanged`
+- [x] `TssSim.ErrorChanged` starts error procedures; wait steps re-check once per sim tick (`Ticked`)
 - [x] Refactor the code for readability (style: references → settings → runtime values, `[SerializeField] private` + tooltips, OnEnable/OnDisable subscriptions, events over reading values)
 
 ### Procedure runner + egress
 - [x] `Procedure` ScriptableObject (Create → TSS → Procedure) instead of JSON
   - Step = header + text + `SwitchReq` (On / Off / Flip) + `ValueReq` (`TssValue` Below / Above threshold); no requirements = manual Confirm
 - [x] `ProcedureRunner`
-  - [x] Auto-advance on `SwitchChanged`, and wait steps on their own fields' `OnValueChanged`; steps already met pass straight through ("Verify OXY – PRI")
-    - **Changed:** no `Ticked` polling
+  - [x] Auto-advance on `SwitchChanged`, and wait steps on `Ticked`; steps already met pass straight through ("Verify OXY – PRI")
+    - **Changed:** per-field `OnValueChanged` watching was tried and dropped as overkill; one `Ticked` check is enough
   - [x] "Unexpected: …" warning on out-of-order flips (warn only, never blocks)
   - [x] Urgent error procedures interrupt and resume the paused one at the same step
   - [x] Progress kept per procedure: switch away and back without losing your place
@@ -126,10 +126,10 @@ Notes:
 ---
 
 ## Week 0 — cleanup before the timeline starts
-- [ ] Test the `XRLever` levers in the headset with hands and controllers (UIA + DCU), including `LeverHandSnap`
-- [ ] Re-run TssSim › Self Test and ProcedureRunner › Self Test after the lever rework
-- [ ] UIA EVA 2: EMU PWR, O2, SUPPLY, WASTE (2005–2008), no sim effect yet
-- [ ] Debug: Time Scale (Project Settings → Time) to fast-forward waits
+- [X] Test the `XRLever` levers in the headset with hands and controllers (UIA + DCU), including `LeverHandSnap`
+- [X] Re-run TssSim › Self Test and ProcedureRunner › Self Test after the lever rework
+- [X] UIA EVA 2: EMU PWR, O2, SUPPLY, WASTE (2005–2008), no sim effect yet
+- [X] Debug: Time Scale (Project Settings → Time) to fast-forward waits
   - [x] Flip any `TssSwitch` without VR: TssSim Inspector switch list (click to flip)
 
 **Done when:** play mode loads clean, every switch changes `TssSim.GetSwitch` with hands and controllers, Reset EVA doesn't desync the boards, both Self Tests log "passed".
@@ -142,6 +142,7 @@ Show the tasks, progress and previous tasks; the wrist panel confirms steps when
 - [ ] HUD top-right of view: procedure title, step N/M, current step text, red warning line, `URGENT` banner + "Paused: Egress 12/31"
 - [ ] Wrist panel (left or right wrist, shown when raised toward the head): scrollable step list, headers only when they change, done = dim, current = highlighted; Confirm / Back / Skip buttons
 - [ ] Subscribe to `ProcedureRunner.Changed` / `Warning` / `Completed`; no live values in the task list (those come in Week 3)
+- [ ] Hand menu lists all active procedures (current + paused); pinching one switches to it (`ProcedureRunner.Begin`) or pulls out its panel
 
 **Done when:** a new player finishes egress in VR with only HUD guidance, with telemetry running from the start.
 
@@ -179,7 +180,7 @@ Telemetry on the HUD (O2 %, …) plus a more in-depth view on the wrist display.
 ## Week 4 — Rock yard, POIs + minimap (shall)
 A minimap of the world with the POIs the procedures travel to. (`Poi`, `Minimap`)
 
-- [ ] Terrain: the real rock yard from `TSS2026/documents/3d-scans` (to scale), rocks, slopes, hazard zones
+- [ ] Flat ground plane for now (`Moon03.mat`); the real terrain comes in Week 10
 - [ ] 3–5 POIs in a loop from the lander: `{ id, position, payloadType }`, known ahead of time
 - [ ] Teleportation Anchors at each POI and the lander
 - [ ] Align the Unity world with the TSS rock-yard frame (X −5765…−5545, Y −10075…−9940): `ImuFeed` sends rock-yard coordinates (Unity origin + offset), not raw Unity metres, so map and pathfinding work on the same numbers the real TSS sends
@@ -270,6 +271,12 @@ A camera for procedures, and bringing certain rocks to POI sites.
 Every component working together; a more realistic environment; fix anything janky.
 
 - [ ] Full run end to end: egress → POIs → ingress → summary, with faults thrown along the way
+- [ ] Terrain: the real rock yard from `TSS2026/documents/3d-scans` (to scale), slopes, hazard zones
+  - [ ] Unity Terrain sized to the rock yard, heights from the scan (or sculpted), POIs / lander / pins re-checked against it
+  - [ ] Terrain Layers: `moon_03` plus one or two other grounds painted unevenly to hide tile repetition (~2 m per tile)
+  - [ ] Scattered rocks with real shadows (random scale / rotation), kept out of the walk paths
+  - [ ] Pick one look and match sky + light to it: JSC rock yard (daylight) or lunar (black sky, low hard sun, low ambient)
+  - [ ] Post: Global Volume with ACES tonemapping, low bloom, slight desaturation; SSAO on `PC_Renderer`
 - [ ] Lighting (done: directional light on, soft shadows, URP main light per-pixel)
   - [ ] Daytime HDRI sky (clear, flat open ground; Poly Haven) → Skybox/Cubemap material → Lighting › Environment, Generate Lighting
   - [ ] Directional Light 1.5–2.5, sun direction matched to the HDRI; set it as Sun Source
@@ -300,4 +307,4 @@ Every component working together; a more realistic environment; fix anything jan
 ## Assignment 2 doc — out of date
 - [ ] Sequence diagram: "pushes the FAN switch with a finger" → grabs and drags the FAN lever (`XRLever`)
 - [ ] Class responsibility table: `TssToggle` "hinge + XR interactable" → connects an `XRLever` to `SetSwitch`; `NavigationAid` "NavMesh path" → grid A* (no NavMesh)
-- [ ] Class + event-flow diagrams: `ProcedureRunner` no longer listens to `Ticked` (uses `SwitchChanged`, `ErrorChanged` and each wait step's `OnValueChanged`)
+- [ ] Class + event-flow diagrams: `ProcedureRunner` listens to `SwitchChanged`, `Ticked` and `ErrorChanged` (add `ErrorChanged`)

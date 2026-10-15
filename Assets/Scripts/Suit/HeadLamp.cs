@@ -1,11 +1,19 @@
 using UnityEngine;
+using UnityEngine.XR.Interaction.Toolkit;
+using UnityEngine.XR.Interaction.Toolkit.Interactables;
 
-// A helmet-side lamp: keeps this light at a fixed spot beside the head and pointing where the head looks.
+// A helmet-side lamp, keeps light at a fixed spot beside the head and pointing where the head looks. Grab it to switch it on or off.
 public class HeadLamp : MonoBehaviour
 {
     [Header("References")]
     [Tooltip("Main Camera under the XR Origin.")]
     [SerializeField] private Transform head;
+
+    [Tooltip("The lamp's light.")]
+    [SerializeField] private Light lamp;
+
+    [Tooltip("XRSimpleInteractable on this object; selecting it switches the lamp.")]
+    [SerializeField] private XRSimpleInteractable interactable;
 
     [Header("Mount")]
     [Tooltip("Where the lamp sits relative to the head, in metres (x = right, y = up, z = forward).")]
@@ -16,17 +24,18 @@ public class HeadLamp : MonoBehaviour
 
     private void OnEnable()
     {
-        Application.onBeforeRender += FollowHead;
+        interactable.selectEntered.AddListener(ToggleLamp);
     }
 
     private void OnDisable()
     {
-        Application.onBeforeRender -= FollowHead;
+        interactable.selectEntered.RemoveListener(ToggleLamp);
     }
 
-    // Runs right before rendering so the lamp uses the latest head pose and doesn't lag.
-    private void FollowHead()
+    private void Update()
     {
         transform.SetPositionAndRotation(head.TransformPoint(offset), head.rotation * Quaternion.Euler(aim));
     }
+
+    private void ToggleLamp(SelectEnterEventArgs args) => lamp.enabled = !lamp.enabled;
 }

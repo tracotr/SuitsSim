@@ -97,7 +97,13 @@ PrefabInstance:
       value: ChestMountBase
       objectReference: {fileID: 0}
     m_RemovedComponents: []
-    m_RemovedGameObjects: []
+    m_RemovedGameObjects:
+    - {fileID: 4038532611015040794, guid: d098aebe8cd289245b79cf817582fb21, type: 3}
+    - {fileID: 5115958079550292673, guid: d098aebe8cd289245b79cf817582fb21, type: 3}
+    - {fileID: 8295424664643239629, guid: d098aebe8cd289245b79cf817582fb21, type: 3}
+    - {fileID: 308246022436375178, guid: d098aebe8cd289245b79cf817582fb21, type: 3}
+    - {fileID: -1699267141594232688, guid: d098aebe8cd289245b79cf817582fb21, type: 3}
+    - {fileID: 5115061461033724540, guid: d098aebe8cd289245b79cf817582fb21, type: 3}
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: d098aebe8cd289245b79cf817582fb21, type: 3}

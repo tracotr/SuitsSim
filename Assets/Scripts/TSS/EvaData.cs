@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using static TssSwitch;
 
 // Every EV1 telemetry value the TSS simulates; the defaults are the real TSS eva1.json values (⋮ → Reset restores them).
 [CreateAssetMenu(fileName = "EvaData", menuName = "TSS/Data/EvaData")]
@@ -66,6 +67,158 @@ public class EvaData : ScriptableObject
         TssValue.ElapsedTime => elapsedTime,
         _ => throw new ArgumentOutOfRangeException(nameof(v)),
     };
+
+    private const float OxyVentRate = 4.3f, OxyFillRate = 2.5f, OxyRate = 0.01f, OxyErrorRate = 0.1f,
+        Co2Rate = 0.01f, CoolantFillRate = 5.76f, CoolantDrainRate = 6.78f, CoolantRate = 0.01f;
+
+    // Hooks up the Dependent formulas and puts every value at its start.
+    public void Init()
+    {
+        primaryOxygenPressure.Formula = () => primaryOxygenStorage.Value * 30f;
+        secondaryOxygenPressure.Formula = () => secondaryOxygenStorage.Value * 30f;
+        suitPressureTotal.Formula = () => suitPressureOxygen.Value + suitPressureCo2.Value + suitPressureOther.Value;
+        helmetPressureCo2.Formula = () => suitPressureCo2.Value * 1.5f;
+        coolantGasPressure.Formula = () => 0f;
+        heartRate.Formula = () => 120f + temperature.Value * 1.55f;
+        oxygenConsumption.Formula = () => 0.1f + 0.0001f * heartRate.Value;
+        co2Production.Formula = () => 0.11f + 0.0002f * heartRate.Value;
+
+        foreach (var field in All()) field.Init();
+        ComputeFormulas();
+    }
+
+    public void ResetValues()
+    {
+        foreach (var field in All()) field.Reset();
+        ComputeFormulas();
+    }
+
+    // Plain values step first, then the formulas that read them.
+    public void Step()
+    {
+        foreach (var field in All()) if (field.Formula == null) field.Step();
+        foreach (var field in All()) if (field.Formula != null) field.Step();
+    }
+
+    // O2 faults only start while the DCU is on the primary tank.
+    public void ThrowError(TssSim sim)
+    {
+        bool onPrimaryOxygen = sim.GetSwitch(DcuEva1Oxy);
+        switch (sim.CurrentError)
+        {
+            case TssError.O2Low:
+                if (onPrimaryOxygen) suitPressureOxygen.Set(TssFieldAlgo.Decay, OxyErrorRate);
+                break;
+            case TssError.O2High:
+                if (onPrimaryOxygen) suitPressureOxygen.Set(TssFieldAlgo.Growth, OxyErrorRate);
+                break;
+            case TssError.FanLow:
+                primaryFanRpm.algo = TssFieldAlgo.Decay;
+                helmetPressureCo2.Set(TssFieldAlgo.Growth, Co2Rate);
+                break;
+        }
+    }
+
+    // The DCU decides which battery, tank and fan are in use, unused ones hold still.
+    public void UpdateActiveStates(TssSim sim)
+    {
+        bool onUmbilical = sim.GetSwitch(DcuEva1Batt), primaryBatterySelected = sim.GetSwitch(DcuEva1BattSource);
+        bool onPrimaryOxygen = sim.GetSwitch(DcuEva1Oxy), onPrimaryFan = sim.GetSwitch(DcuEva1Fan);
+        bool ventingTanks = sim.UiaConnected && sim.GetSwitch(UiaOxyVent);
+
+        foreach (var field in All()) field.Active = true;
+
+        primaryBatteryLevel.Active = !onUmbilical && primaryBatterySelected;
+        secondaryBatteryLevel.Active = !onUmbilical && !primaryBatterySelected;
+        primaryOxygenStorage.Active = onPrimaryOxygen || sim.CurrentError is TssError.O2Low or TssError.O2High || ventingTanks;
+        secondaryOxygenStorage.Active = !onPrimaryOxygen || ventingTanks;
+        primaryFanRpm.Active = onPrimaryFan || sim.CurrentError == TssError.FanLow;
+        secondaryFanRpm.Active = !onPrimaryFan;
+        coolantLiquidPressure.Active = sim.GetSwitch(DcuEva1Pump);
+    }
+
+    // On the secondary tank suit O2 recovers to 4 psi, on the primary it keeps failing.
+    public void UpdateOxygen(TssSim sim)
+    {
+        bool onPrimaryOxygen = sim.GetSwitch(DcuEva1Oxy);
+        var error = sim.CurrentError;
+        if (!onPrimaryOxygen)
+        {
+            if (error == TssError.O2Low) { suitPressureOxygen.Set(TssFieldAlgo.Growth, OxyRate); suitPressureOxygen.max = 4f; }
+            if (error == TssError.O2High) { suitPressureOxygen.Set(TssFieldAlgo.Decay, OxyRate); suitPressureOxygen.min = 4f; }
+        }
+        else if (error == TssError.O2Low) { suitPressureOxygen.Set(TssFieldAlgo.Decay, OxyErrorRate); suitPressureOxygen.min = 0f; }
+        else if (error == TssError.O2High) { suitPressureOxygen.Set(TssFieldAlgo.Growth, OxyErrorRate); suitPressureOxygen.max = 4.2f; }
+    }
+
+    // Switching to the secondary fan clears the helmet CO2.
+    public void UpdateFans(TssSim sim)
+    {
+        bool onPrimaryFan = sim.GetSwitch(DcuEva1Fan);
+        bool primaryFanFailed = primaryFanRpm.algo == TssFieldAlgo.Decay;
+        if (!onPrimaryFan && primaryFanFailed) helmetPressureCo2.Set(TssFieldAlgo.Decay, 1000f);
+        primaryFanRpm.Value = onPrimaryFan && sim.CurrentError != TssError.FanLow ? 30000f : 0f;
+        secondaryFanRpm.Value = onPrimaryFan ? 0f : 30000f;
+    }
+
+    // The selected scrubber fills while the other vents, past 30% suit CO2 rises.
+    public void UpdateScrubbers(TssSim sim)
+    {
+        bool scrubberASelected = sim.GetSwitch(DcuEva1Co2);
+        scrubberACo2Storage.algo = scrubberASelected ? TssFieldAlgo.Growth : TssFieldAlgo.Decay;
+        scrubberBCo2Storage.algo = scrubberASelected ? TssFieldAlgo.Decay : TssFieldAlgo.Growth;
+        var fillingScrubber = scrubberASelected ? scrubberACo2Storage : scrubberBCo2Storage;
+        suitPressureCo2.algo = fillingScrubber.Value > 30f ? TssFieldAlgo.Growth : TssFieldAlgo.Decay;
+    }
+
+    public bool HasError(TssErrorFlag flag, TssSim sim) => flag switch
+    {
+        TssErrorFlag.Oxy => sim.GetSwitch(DcuEva1Oxy) && sim.CurrentError is TssError.O2Low or TssError.O2High,
+        TssErrorFlag.Fan => sim.GetSwitch(DcuEva1Fan) && primaryFanRpm.algo == TssFieldAlgo.Decay,
+        TssErrorFlag.Power => !sim.GetSwitch(DcuEva1Batt) && sim.GetSwitch(DcuEva1BattSource) && primaryBatteryLevel.Value < 20f,
+        TssErrorFlag.Scrubber => (sim.GetSwitch(DcuEva1Co2) ? scrubberACo2Storage : scrubberBCo2Storage).Value > 60f,
+        _ => false,
+    };
+
+    // While plugged into the UIA: O2 vent / fill, suit pressurization and coolant fill / drain.
+    public void UpdateUiaConnected(TssSim sim)
+    {
+        if (!sim.UiaConnected) return;
+
+        bool onPrimaryOxygen = sim.GetSwitch(DcuEva1Oxy), oxygenVentOpen = sim.GetSwitch(UiaOxyVent), emuOxygenOpen = sim.GetSwitch(UiaEva1Oxy);
+        if (oxygenVentOpen)
+        {
+            primaryOxygenStorage.Set(TssFieldAlgo.Decay, OxyVentRate);
+            secondaryOxygenStorage.Set(TssFieldAlgo.Decay, OxyVentRate);
+        }
+        else
+        {
+            var (activeTank, idleTank) = onPrimaryOxygen ? (primaryOxygenStorage, secondaryOxygenStorage) : (secondaryOxygenStorage, primaryOxygenStorage);
+            if (emuOxygenOpen) { activeTank.Set(TssFieldAlgo.Growth, OxyFillRate); idleTank.Set(TssFieldAlgo.Decay, OxyRate); }
+            else { activeTank.Set(TssFieldAlgo.Decay, OxyRate); idleTank.Set(TssFieldAlgo.Decay, 0f); }
+        }
+
+        float activeTankPressure = (onPrimaryOxygen ? primaryOxygenPressure : secondaryOxygenPressure).Value;
+        if (!oxygenVentOpen && !emuOxygenOpen && onPrimaryOxygen && activeTankPressure > 1000f)
+        {
+            if (suitPressureOxygen.Value < 4f) suitPressureOxygen.algo = TssFieldAlgo.Growth;
+            else { suitPressureOxygen.Value = 4f; suitPressureOxygen.algo = TssFieldAlgo.Constant; }
+        }
+
+        suitPressureCo2.Value = 0f;
+        suitPressureCo2.algo = TssFieldAlgo.Constant;
+
+        bool pumpOpen = sim.GetSwitch(DcuEva1Pump), waterSupplyOpen = sim.GetSwitch(UiaEva1WaterSupply), waterWasteOpen = sim.GetSwitch(UiaEva1WaterWaste);
+        if (pumpOpen && !waterSupplyOpen && waterWasteOpen) coolantStorage.Set(TssFieldAlgo.Decay, CoolantDrainRate);
+        else if (pumpOpen && waterSupplyOpen && !waterWasteOpen) coolantStorage.Set(TssFieldAlgo.Growth, CoolantFillRate);
+        else coolantStorage.Set(TssFieldAlgo.Decay, CoolantRate);
+    }
+
+    // Dependent fields start at 0, so fill them in before the first tick.
+    private void ComputeFormulas()
+    {
+        foreach (var field in All()) if (field.Formula != null) field.Value = field.Formula();
+    }
 
     // Every TssField in the same order every time for ticking.
     public IEnumerable<TssField> All()

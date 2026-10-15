@@ -17,7 +17,7 @@ public class TssToggle : MonoBehaviour
 
     [Header("Switch")]
     [Tooltip("The TSS switch this lever controls.")]
-    [SerializeField] private TssSwitch sw = TssSwitch.UiaEva1Power;
+    [SerializeField] private TssSwitch targetSwitch = TssSwitch.UiaEva1Power;
 
     [Header("Feedback")]
     [Tooltip("Lever tint while a hand or controller is on it.")]
@@ -45,7 +45,7 @@ public class TssToggle : MonoBehaviour
 
     private void OnEnable()
     {
-        SetLever(TssSim.Instance.GetSwitch(sw));
+        SetLever(TssSim.Instance.GetSwitch(targetSwitch));
 
         lever.onLeverActivate.AddListener(OnLeverOn);
         lever.onLeverDeactivate.AddListener(OnLeverOff);
@@ -78,7 +78,7 @@ public class TssToggle : MonoBehaviour
     {
         if (_settingLever) return;
         if (click) click.PlayOneShot(click.clip);
-        TssSim.Instance.SetSwitch(sw, on);
+        TssSim.Instance.SetSwitch(targetSwitch, on);
     }
 
     // The lever fires its events when set from code too, so those are ignored here.
@@ -91,14 +91,14 @@ public class TssToggle : MonoBehaviour
 
     private void OnSwitchChanged(TssSwitch s, bool value)
     {
-        if (s == sw && value != lever.value) SetLever(value);
+        if (s == targetSwitch && value != lever.value) SetLever(value);
     }
 
     private void OnHoverChanged(BaseInteractionEventArgs args) => RefreshTint();
 
     private void OnUnexpectedSwitch(TssSwitch s)
     {
-        if (s != sw) return;
+        if (s != targetSwitch) return;
         _warningStart = Time.time;
         RefreshTint();
     }

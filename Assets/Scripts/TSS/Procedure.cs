@@ -59,22 +59,8 @@ public class ProcedureStep
         foreach (var r in switchRequirements) r.SaveStartState();
     }
 
-    public bool RequirementsMet()
-    {
-        if (!HasRequirements) return false;
-
-        if (switchRequirements.Any(r => !r.RequirementMet()))
-        {
-            return false;
-        }
-
-        if (valueRequirements.Any(r => !r.RequirementMet()))
-        {
-            return false;
-        }
-
-        return true;
-    }
+    public bool RequirementsMet() =>
+        HasRequirements && switchRequirements.All(r => r.RequirementMet()) && valueRequirements.All(r => r.RequirementMet());
 
     // Anything this returns false for is an out-of-order flip.
     public bool ExpectsSwitch(TssSwitch s)

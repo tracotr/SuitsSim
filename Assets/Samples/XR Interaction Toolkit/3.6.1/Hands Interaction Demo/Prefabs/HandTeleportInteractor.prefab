@@ -1020,6 +1020,7 @@ GameObject:
   - component: {fileID: 5466956430516173167}
   - component: {fileID: 3205640160985484538}
   - component: {fileID: 7761066974229038758}
+  - component: {fileID: 1500000000000000001}
   m_Layer: 0
   m_Name: HandTeleportInteractor
   m_TagString: Untagged
@@ -1148,3 +1149,16 @@ MonoBehaviour:
   m_AttachTransformForRotation: {fileID: 2485703298768467489}
   m_NavigatorUI: {fileID: 3531855593982283331}
   m_XROrigin: {fileID: 0}
+--- !u!114 &1500000000000000001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8683588665587453183}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 05a9e73337cc4cb3ba05022ab9822185, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::DominantHandOnly
+  hand: 2
