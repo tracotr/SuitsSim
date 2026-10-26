@@ -2,8 +2,8 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-// HUD card with the procedure runner's current procedure and step.
-public class ProcedureDisplay : MonoBehaviour
+// Panel with the procedure runner's current procedure and step.
+public class ProcedureDisplay : WristDisplayPanel
 {
     [Header("References")]
     [Tooltip("Procedure title and step count.")]
@@ -25,28 +25,27 @@ public class ProcedureDisplay : MonoBehaviour
     [Tooltip("Title and accent color for urgent (error) procedures.")]
     [SerializeField] private Color urgentColor = new(1f, 0.6f, 0.15f);
 
-    // runtime values
-    private ProcedureRunner _runner;
-
-    private void OnEnable()
+    // Steps change between sim ticks, so also redraw when the runner moves on.
+    protected override void OnEnable()
     {
-        _runner = ProcedureRunner.Instance;
-        _runner.Changed += Refresh;
-        Refresh();
+        base.OnEnable();
+        ProcedureRunner.Instance.Changed += Refresh;
     }
 
-    private void OnDisable()
+    protected override void OnDisable()
     {
-        if (_runner) _runner.Changed -= Refresh;
+        base.OnDisable();
+        if (ProcedureRunner.Instance) ProcedureRunner.Instance.Changed -= Refresh;
     }
 
-    private void Refresh()
+    protected override void Refresh()
     {
-        var procedure = _runner.Current;
-        var currentStep = _runner.CurrentStep;
+        var runner = ProcedureRunner.Instance;
+        var procedure = runner.Current;
+        var currentStep = runner.CurrentStep;
 
-        title.text = procedure ? $"{procedure.title.ToUpper()}  {_runner.Index + 1}/{procedure.steps.Count}" : "NO PROCEDURE";
-        title.color = accent.color = _runner.IsUrgent ? urgentColor : normalColor;
+        title.text = procedure ? $"{procedure.title.ToUpper()}  {runner.Index + 1}/{procedure.steps.Count}" : "NO PROCEDURE";
+        title.color = accent.color = runner.IsUrgent ? urgentColor : normalColor;
         header.text = currentStep?.header ?? "";
         step.text = currentStep?.text ?? "";
     }
