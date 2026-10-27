@@ -37,11 +37,12 @@ public abstract class WristDisplayPanel : MonoBehaviour
     // Redraws the panel from the latest data.
     protected abstract void Refresh();
 
-    // Spawns the world copy here and moves the grab onto it; its grip lines up with the hand.
+    // Spawns the world copy in this panel's place and moves the grab onto it, held where it was pinched.
     private void PullOut(SelectEnterEventArgs args)
     {
         if (!worldPanel) return;
         var copy = Instantiate(worldPanel, transform.position, transform.rotation);
+        copy.transform.localScale = transform.lossyScale;
         args.manager.SelectExit(args.interactorObject, grab);
         args.manager.SelectEnter(args.interactorObject, copy.grab);
     }

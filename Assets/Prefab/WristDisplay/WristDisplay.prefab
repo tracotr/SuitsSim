@@ -15,7 +15,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &3501733871285573077
 Transform:
   m_ObjectHideFlags: 0
@@ -129,6 +129,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 92cf6b0372bec13409be7e09cd194563, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WristVisibility
+  panels: {fileID: 3501733871285573077}
   leftHand: {fileID: 0}
   rightHand: {fileID: 0}
   leftWrist: {fileID: 0}

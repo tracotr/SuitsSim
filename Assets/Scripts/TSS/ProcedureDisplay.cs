@@ -2,27 +2,30 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-// Panel with the procedure runner's current procedure and step.
+// Panel with the procedure runner's current step: a small context line, the step itself with its action first, and a preview of the next step.
 public class ProcedureDisplay : WristDisplayPanel
 {
     [Header("References")]
-    [Tooltip("Procedure title and step count.")]
+    [Tooltip("Small top line: procedure title and the step's section.")]
     [SerializeField] private TMP_Text title;
 
-    [Tooltip("Section header of the current step.")]
-    [SerializeField] private TMP_Text header;
+    [Tooltip("Small top-right step count, e.g. STEP 7/31.")]
+    [SerializeField] private TMP_Text count;
 
     [Tooltip("What the current step tells the astronaut to do.")]
     [SerializeField] private TMP_Text step;
 
-    [Tooltip("Bar on the card's edge, tinted by priority.")]
-    [SerializeField] private Image accent;
+    [Tooltip("Dim bottom line previewing the next step.")]
+    [SerializeField] private TMP_Text nextStep;
+
+    [Tooltip("Outline around the panel, tinted by priority.")]
+    [SerializeField] private Image border;
 
     [Header("Colors")]
-    [Tooltip("Title and accent color for normal procedures.")]
+    [Tooltip("Border color for normal procedures.")]
     [SerializeField] private Color normalColor = new(0.35f, 0.8f, 1f);
 
-    [Tooltip("Title and accent color for urgent (error) procedures.")]
+    [Tooltip("Border color for urgent (error) procedures.")]
     [SerializeField] private Color urgentColor = new(1f, 0.6f, 0.15f);
 
     // Steps change between sim ticks, so also redraw when the runner moves on.
@@ -42,11 +45,22 @@ public class ProcedureDisplay : WristDisplayPanel
     {
         var runner = ProcedureRunner.Instance;
         var procedure = runner.Current;
-        var currentStep = runner.CurrentStep;
+        var current = runner.CurrentStep;
+        var next = procedure && runner.Index + 1 < procedure.steps.Count ? procedure.steps[runner.Index + 1] : null;
 
-        title.text = procedure ? $"{procedure.title.ToUpper()}  {runner.Index + 1}/{procedure.steps.Count}" : "NO PROCEDURE";
-        title.color = accent.color = runner.IsUrgent ? urgentColor : normalColor;
-        header.text = currentStep?.header ?? "";
-        step.text = currentStep?.text ?? "";
+        title.text = !procedure ? "NO PROCEDURE"
+            : current != null ? $"{procedure.title.ToUpper()} · {current.header.ToUpper()}"
+            : procedure.title.ToUpper();
+        count.text = procedure ? $"STEP {runner.Index + 1}/{procedure.steps.Count}" : "";
+        step.text = current != null ? LeadWithAction(current.text) : "";
+        nextStep.text = next != null ? $"NEXT  {next.text}" : "";
+        border.color = runner.IsUrgent ? urgentColor : normalColor;
+    }
+
+    // Bold caps on the first word, the action, so it reads first.
+    private static string LeadWithAction(string text)
+    {
+        int space = text.IndexOf(' ');
+        return space < 0 ? $"<b>{text.ToUpper()}</b>" : $"<b>{text[..space].ToUpper()}</b>{text[space..]}";
     }
 }
