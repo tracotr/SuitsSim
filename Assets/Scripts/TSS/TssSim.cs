@@ -60,7 +60,7 @@ public class TssSim : MonoBehaviour
     public static TssSim Instance { get; private set; }
     public bool StartOnPlay => startOnPlay;
     public EvaData Eva1 { get; private set; }
-    public bool Running { get; private set; }
+    public bool Running { get; private set; } = false;
     public TssError CurrentError { get; private set; }
     public float PosX { get; private set; }
     public float PosY { get; private set; }
@@ -89,6 +89,8 @@ public class TssSim : MonoBehaviour
 
     private void Update()
     {
+        if (!Running) return;
+        
         _tickTimer += Time.deltaTime;
         if (_tickTimer < 1f) return;
         _tickTimer -= 1f;
@@ -164,8 +166,6 @@ public class TssSim : MonoBehaviour
 
         foreach (TssErrorFlag flag in Enum.GetValues(typeof(TssErrorFlag)))
             SetError(flag, Eva1.HasError(flag, this));
-
-        if (!Running) return;
 
         _simTime++;
         if (CurrentError == TssError.None && _simTime == randomErrorAt)

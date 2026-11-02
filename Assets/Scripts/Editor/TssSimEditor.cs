@@ -16,7 +16,7 @@ public class TssSimEditor : Editor
         var sim = (TssSim)target;
 
         EditorGUILayout.Space();
-        if (!Application.isPlaying || sim.Eva1 == null)
+        if (!Application.isPlaying || !sim.Eva1)
         {
             EditorGUILayout.HelpBox("Enter Play mode for live data and test buttons.", MessageType.Info);
             return;

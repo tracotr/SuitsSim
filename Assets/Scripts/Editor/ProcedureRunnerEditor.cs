@@ -87,7 +87,6 @@ public class ProcedureRunnerEditor : Editor
         if (sim.StartOnPlay) sim.StartEva();
         var start = run ? Field(run, "startProcedure") : null;
         if (!start) return;
-        if (new SerializedObject(run).FindProperty("resetSwitchesOnStart").boolValue) sim.StartEva();
         run.Begin(start);
     }
 

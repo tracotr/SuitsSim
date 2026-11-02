@@ -130,6 +130,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WristVisibility
   panels: {fileID: 3501733871285573077}
+  panelRotation: 80
   leftHand: {fileID: 0}
   rightHand: {fileID: 0}
   leftWrist: {fileID: 0}
@@ -270,6 +271,18 @@ PrefabInstance:
       value: 150
       objectReference: {fileID: 0}
     - target: {fileID: 1200000000000000002, guid: c47f586b060a9074dad6e31fd7691d5f, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.0006
+      objectReference: {fileID: 0}
+    - target: {fileID: 1200000000000000002, guid: c47f586b060a9074dad6e31fd7691d5f, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.0006
+      objectReference: {fileID: 0}
+    - target: {fileID: 1200000000000000002, guid: c47f586b060a9074dad6e31fd7691d5f, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.0006
+      objectReference: {fileID: 0}
+    - target: {fileID: 1200000000000000002, guid: c47f586b060a9074dad6e31fd7691d5f, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
       objectReference: {fileID: 0}
@@ -279,7 +292,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1200000000000000002, guid: c47f586b060a9074dad6e31fd7691d5f, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0
+      value: -0.108
       objectReference: {fileID: 0}
     - target: {fileID: 1200000000000000002, guid: c47f586b060a9074dad6e31fd7691d5f, type: 3}
       propertyPath: m_LocalRotation.w
@@ -303,7 +316,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1200000000000000002, guid: c47f586b060a9074dad6e31fd7691d5f, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0.18
+      value: 0.086
       objectReference: {fileID: 0}
     - target: {fileID: 1200000000000000002, guid: c47f586b060a9074dad6e31fd7691d5f, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -316,6 +329,10 @@ PrefabInstance:
     - target: {fileID: 1200000000000000002, guid: c47f586b060a9074dad6e31fd7691d5f, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1200000000000000002, guid: c47f586b060a9074dad6e31fd7691d5f, type: 3}
+      propertyPath: m_ConstrainProportionsScale
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1200000000000000003, guid: c47f586b060a9074dad6e31fd7691d5f, type: 3}
       propertyPath: m_AdditionalShaderChannelsFlag
@@ -340,6 +357,10 @@ PrefabInstance:
     - target: {fileID: 1200000000000000025, guid: c47f586b060a9074dad6e31fd7691d5f, type: 3}
       propertyPath: 'm_ActiveFontFeatures.Array.data[0]'
       value: 1801810542
+      objectReference: {fileID: 0}
+    - target: {fileID: 1200000000000000029, guid: c47f586b060a9074dad6e31fd7691d5f, type: 3}
+      propertyPath: m_fontSize
+      value: 17.9
       objectReference: {fileID: 0}
     - target: {fileID: 1200000000000000029, guid: c47f586b060a9074dad6e31fd7691d5f, type: 3}
       propertyPath: m_TextStyleHashCode

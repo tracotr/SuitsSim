@@ -160,7 +160,7 @@ MonoBehaviour:
       m_Flags: 0
     m_InputActionReferencePerformed: {fileID: 187161793506945269, guid: c348712bda248c246b8c49b3db54643f, type: 3}
     m_InputActionReferenceValue: {fileID: -1758520528963094988, guid: c348712bda248c246b8c49b3db54643f, type: 3}
-    m_ObjectReferenceObject: {fileID: 6251852995090953156}
+    m_ObjectReferenceObject: {fileID: 1500000000000000002}
     m_ManualPerformed: 0
     m_ManualValue: 0
     m_ManualQueuePerformed: 0
@@ -1021,6 +1021,7 @@ GameObject:
   - component: {fileID: 3205640160985484538}
   - component: {fileID: 7761066974229038758}
   - component: {fileID: 1500000000000000001}
+  - component: {fileID: 1500000000000000002}
   m_Layer: 0
   m_Name: HandTeleportInteractor
   m_TagString: Untagged
@@ -1114,13 +1115,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b5ecff2a8f6011b4cae716bffa13b74b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_ActivateHandShape: {fileID: 11400000, guid: 058e1e2ef2986ef4d81efa7f2e0ca400, type: 2}
+  m_ActivateHandShape: {fileID: 11400000, guid: e863a2a22d6dda740bd9ee2298b3afd5, type: 2}
   m_ActivateHandOrientation:
     m_UserConditions:
-    - m_HandAxis: 0
+    - m_HandAxis: 1
       m_AlignmentCondition: 0
       m_ReferenceDirection: 0
-      m_AngleTolerance: 49.7
+      m_AngleTolerance: 50
       m_IgnorePositionY: 0
     m_TargetConditions: []
   m_CancelHandShape: {fileID: 11400000, guid: 7bcde3e87d2d3974aa262f213448d6b0, type: 2}
@@ -1162,3 +1163,17 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::DominantHandOnly
   hand: 2
+--- !u!114 &1500000000000000002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8683588665587453183}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a84b85a1930c49239658c9957ebe5df1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HandShapeButtonReader
+  handTrackingEvents: {fileID: 5466956430516173167}
+  pressedShape: {fileID: 11400000, guid: 619bc5cc896f45048bba7a0e631e9032, type: 2}

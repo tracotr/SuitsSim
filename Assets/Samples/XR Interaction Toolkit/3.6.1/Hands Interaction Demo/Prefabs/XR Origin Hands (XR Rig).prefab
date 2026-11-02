@@ -2000,7 +2000,7 @@ PrefabInstance:
       objectReference: {fileID: 2942156198692655549}
     - target: {fileID: 3205640160985484538, guid: 5af200a2ddec1634fa8bb1fac97c1169, type: 3}
       propertyPath: m_ActivateHandOrientation.m_UserConditions.Array.data[0].m_HandAxis
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3205640160985484538, guid: 5af200a2ddec1634fa8bb1fac97c1169, type: 3}
       propertyPath: m_ActivateHandOrientation.m_UserConditions.Array.data[0].m_AngleTolerance
@@ -3344,7 +3344,7 @@ PrefabInstance:
       objectReference: {fileID: 5359434741994886739}
     - target: {fileID: 3205640160985484538, guid: 5af200a2ddec1634fa8bb1fac97c1169, type: 3}
       propertyPath: m_ActivateHandOrientation.m_UserConditions.Array.data[0].m_HandAxis
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3205640160985484538, guid: 5af200a2ddec1634fa8bb1fac97c1169, type: 3}
       propertyPath: m_ActivateHandOrientation.m_UserConditions.Array.data[0].m_AngleTolerance

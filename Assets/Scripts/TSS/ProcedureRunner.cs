@@ -10,7 +10,7 @@ public class ProcedureRunner : MonoBehaviour
     [Tooltip("Started on Play. Leave empty to start idle.")]
     [SerializeField] private Procedure startProcedure;
 
-    [Tooltip("CAPCOM setup before the start procedure: all switches off, then Start EVA (telemetry runs during egress).")]
+    [Tooltip("CAPCOM setup before the start procedure: all switches off. The EVA itself starts only if TssSim's Start On Play is on.")]
     [SerializeField] private bool resetSwitchesOnStart = true;
 
     [Header("Urgent procedures")]
@@ -85,11 +85,7 @@ public class ProcedureRunner : MonoBehaviour
     private void Start()
     {
         if (!startProcedure) return;
-        if (resetSwitchesOnStart)
-        {
-            _sim.ResetSwitches();
-            _sim.StartEva();
-        }
+        if (resetSwitchesOnStart) _sim.ResetSwitches();
         Begin(startProcedure);
     }
 

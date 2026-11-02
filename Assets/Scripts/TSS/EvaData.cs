@@ -119,7 +119,7 @@ public class EvaData : ScriptableObject
         }
     }
 
-    // The DCU decides which battery, tank and fan are in use, unused ones hold still.
+    // The DCU decides which battery, tank and fan are in use
     public void UpdateActiveStates(TssSim sim)
     {
         bool onUmbilical = sim.GetSwitch(DcuEva1Batt), primaryBatterySelected = sim.GetSwitch(DcuEva1BattSource);
