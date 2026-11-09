@@ -10,41 +10,41 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d5fb3781030442f2bcc893f0dbffabc5, type: 3}
-  m_Name: Pinch Hand Shape
-  m_EditorClassIdentifier: 
+  m_Name: ThumbsUpHandShape
+  m_EditorClassIdentifier: Unity.XR.Hands::UnityEngine.XR.Hands.Gestures.XRHandShape
   m_FingerShapeConditions:
-  - m_FingerID: 1
-    m_Targets:
-    - m_ShapeType: 3
-      m_UpperTolerance: 0.2
-      m_LowerTolerance: 0
-      m_Tolerance: 0
-      m_Desired: 1
   - m_FingerID: 0
     m_Targets:
-    - m_ShapeType: 5
-      m_UpperTolerance: 0
+    - m_ShapeType: 0
+      m_UpperTolerance: 0.32
       m_LowerTolerance: 0
       m_Tolerance: 0
       m_Desired: 0
-  - m_FingerID: 3
+  - m_FingerID: 1
     m_Targets:
-    - m_ShapeType: 5
+    - m_ShapeType: 0
       m_UpperTolerance: 0
-      m_LowerTolerance: 0
+      m_LowerTolerance: 0.25
       m_Tolerance: 0
-      m_Desired: 0
+      m_Desired: 1
   - m_FingerID: 2
     m_Targets:
-    - m_ShapeType: 5
+    - m_ShapeType: 0
       m_UpperTolerance: 0
-      m_LowerTolerance: 0
+      m_LowerTolerance: 0.25
       m_Tolerance: 0
-      m_Desired: 0
+      m_Desired: 1
+  - m_FingerID: 3
+    m_Targets:
+    - m_ShapeType: 0
+      m_UpperTolerance: 0
+      m_LowerTolerance: 0.25
+      m_Tolerance: 0
+      m_Desired: 1
   - m_FingerID: 4
     m_Targets:
-    - m_ShapeType: 5
+    - m_ShapeType: 0
       m_UpperTolerance: 0
-      m_LowerTolerance: 0
+      m_LowerTolerance: 0.25
       m_Tolerance: 0
-      m_Desired: 0
+      m_Desired: 1

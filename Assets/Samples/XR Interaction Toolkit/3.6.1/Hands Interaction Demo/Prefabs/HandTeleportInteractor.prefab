@@ -1115,13 +1115,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b5ecff2a8f6011b4cae716bffa13b74b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_ActivateHandShape: {fileID: 11400000, guid: e863a2a22d6dda740bd9ee2298b3afd5, type: 2}
+  m_ActivateHandShape: {fileID: 11400000, guid: f51f37a3778447a688cb67ba07a32baf, type: 2}
   m_ActivateHandOrientation:
     m_UserConditions:
     - m_HandAxis: 1
       m_AlignmentCondition: 0
       m_ReferenceDirection: 0
-      m_AngleTolerance: 50
+      m_AngleTolerance: 57
       m_IgnorePositionY: 0
     m_TargetConditions: []
   m_CancelHandShape: {fileID: 11400000, guid: 7bcde3e87d2d3974aa262f213448d6b0, type: 2}

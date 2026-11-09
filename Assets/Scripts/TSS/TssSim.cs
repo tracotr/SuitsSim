@@ -37,7 +37,7 @@ public enum TssErrorFlag
     Fan, Oxy, Power, Scrubber
 }
 
-// The simulated TSS: EV1 telemetry stepped once per second from the UIA / DCU switches
+// The simulated TSS. EV1 telemetry is stepped once per second from the UIA and DCU switches.
 [DefaultExecutionOrder(-100)]
 public class TssSim : MonoBehaviour
 {

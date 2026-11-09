@@ -2,11 +2,11 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-// Panel with the procedure runner's current step: a small context line, the step itself with its action first, and a preview of the next step.
+// Panel with the procedure runner's current step. It shows the task name, the step with its action first, and a preview of the next step.
 public class ProcedureDisplay : WristDisplayPanel
 {
     [Header("References")]
-    [Tooltip("Small top line: procedure title and the step's section.")]
+    [Tooltip("Small top line: the current task's name, e.g. PREP O2 TANKS.")]
     [SerializeField] private TMP_Text title;
 
     [Tooltip("Small top-right step count, e.g. STEP 7/31.")]
@@ -49,7 +49,7 @@ public class ProcedureDisplay : WristDisplayPanel
         var next = procedure && runner.Index + 1 < procedure.steps.Count ? procedure.steps[runner.Index + 1] : null;
 
         title.text = !procedure ? "NO PROCEDURE"
-            : current != null ? $"{procedure.title.ToUpper()} - {current.header.ToUpper()}"
+            : current != null ? current.header.ToUpper()
             : procedure.title.ToUpper();
         count.text = procedure ? $"STEP {runner.Index + 1}/{procedure.steps.Count}" : "";
         step.text = current != null ? current.text : "";

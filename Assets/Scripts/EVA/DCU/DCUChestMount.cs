@@ -1,6 +1,6 @@
 using UnityEngine;
 
-// Keeps the DCU strapped to the chest: it sits below and in front of the head and only turns once the head looks well away,
+// Keeps the DCU strapped to the chest. It sits below and in front of the head and only turns once the head looks well away,
 // so glancing around while using the switches doesn't move it. Keep it under Camera Offset so teleports and snap turns carry it along.
 public class DCUChestMount : MonoBehaviour
 {
@@ -15,10 +15,10 @@ public class DCUChestMount : MonoBehaviour
     [Tooltip("How far the head can turn left or right, in degrees, before the chest turns to follow.")]
     [SerializeField] private float deadZone = 20f;
 
-    [Tooltip("How quickly the chest turns to catch up with the head; higher is snappier.")]
+    [Tooltip("How quickly the chest turns to catch up with the head. Higher is snappier.")]
     [SerializeField] private float turnSpeed = 4f;
 
-    [Tooltip("How quickly the DCU follows the head's position; higher is snappier.")]
+    [Tooltip("How quickly the DCU follows the head's position. Higher is snappier.")]
     [SerializeField] private float followSpeed = 10f;
     
     [Tooltip("The offset rotation of the dcu")]

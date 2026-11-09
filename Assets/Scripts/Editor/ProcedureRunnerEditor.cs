@@ -5,7 +5,7 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
-// Play mode view of the procedure runner: the step list, Confirm / Skip / Back, and test runs.
+// Play mode view of the procedure runner with the step list, Confirm, Skip and Back buttons, and test runs.
 [CustomEditor(typeof(ProcedureRunner))]
 public class ProcedureRunnerEditor : Editor
 {

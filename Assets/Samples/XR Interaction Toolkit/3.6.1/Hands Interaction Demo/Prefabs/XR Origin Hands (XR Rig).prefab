@@ -2004,7 +2004,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3205640160985484538, guid: 5af200a2ddec1634fa8bb1fac97c1169, type: 3}
       propertyPath: m_ActivateHandOrientation.m_UserConditions.Array.data[0].m_AngleTolerance
-      value: 50
+      value: 57
       objectReference: {fileID: 0}
     - target: {fileID: 3205640160985484538, guid: 5af200a2ddec1634fa8bb1fac97c1169, type: 3}
       propertyPath: m_ActivateHandOrientation.m_UserConditions.Array.data[0].m_IgnorePositionY
@@ -3348,7 +3348,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3205640160985484538, guid: 5af200a2ddec1634fa8bb1fac97c1169, type: 3}
       propertyPath: m_ActivateHandOrientation.m_UserConditions.Array.data[0].m_AngleTolerance
-      value: 50
+      value: 57
       objectReference: {fileID: 0}
     - target: {fileID: 3205640160985484538, guid: 5af200a2ddec1634fa8bb1fac97c1169, type: 3}
       propertyPath: m_ActivateHandOrientation.m_UserConditions.Array.data[0].m_IgnorePositionY

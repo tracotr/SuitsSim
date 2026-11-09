@@ -4,7 +4,7 @@ using System.Linq;
 using UnityEngine;
 using static TssSwitch;
 
-// Every EV1 telemetry value the TSS simulates; the defaults are the real TSS eva1.json values (⋮ → Reset restores them).
+// Every EV1 telemetry value the TSS simulates. The defaults are the real TSS eva1.json values, and Reset in the component menu restores them.
 [CreateAssetMenu(fileName = "EvaData", menuName = "TSS/Data/EvaData")]
 public class EvaData : ScriptableObject
 {
@@ -180,7 +180,7 @@ public class EvaData : ScriptableObject
         _ => false,
     };
 
-    // While plugged into the UIA: O2 vent / fill, suit pressurization and coolant fill / drain.
+    // While plugged into the UIA this handles O2 venting and filling, suit pressurization, and coolant filling and draining.
     public void UpdateUiaConnected(TssSim sim)
     {
         if (!sim.UiaConnected) return;

@@ -2,7 +2,7 @@ using System;
 using UnityEditor;
 using UnityEngine;
 
-// Play mode view of the TSS: status, switches you can click to flip, telemetry, and test buttons.
+// Play mode view of the TSS with its status, clickable switches, telemetry and test buttons.
 [CustomEditor(typeof(TssSim))]
 public class TssSimEditor : Editor
 {

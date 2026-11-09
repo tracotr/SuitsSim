@@ -10,7 +10,7 @@ public class HeadLamp : MonoBehaviour
     [Tooltip("The lamp's light.")]
     [SerializeField] private Light lamp;
 
-    // [Tooltip("XRSimpleInteractable on this object; selecting it switches the lamp.")]
+    // [Tooltip("XRSimpleInteractable on this object. Selecting it switches the lamp.")]
     // [SerializeField] private XRSimpleInteractable interactable;
 
     [Header("Mount")]
