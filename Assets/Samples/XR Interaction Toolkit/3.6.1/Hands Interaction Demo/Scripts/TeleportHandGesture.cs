@@ -75,6 +75,15 @@ namespace UnityEngine.XR.Interaction.Toolkit.XRHandLocomotion
         [SerializeField, FormerlySerializedAs("m_nearFarInteractor")]
         NearFarInteractor m_NearFarInteractor;
 
+        /// <summary>
+        /// The hand's NearFarInteractor that is disabled when teleport mode is active. Set by HandTeleport when the dominant hand changes.
+        /// </summary>
+        public NearFarInteractor nearFarInteractor
+        {
+            get => m_NearFarInteractor;
+            set => m_NearFarInteractor = value;
+        }
+
         Transform m_HandTrackingOrigin;
 #if XR_HANDS_1_5_OR_NEWER
         XRHandJointsUpdatedEventArgs m_LatestHandData;

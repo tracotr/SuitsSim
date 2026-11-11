@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.XR.Hands;
 
@@ -7,13 +8,25 @@ using UnityEngine.XR.Hands;
 public class UserHandedness : MonoBehaviour
 {
     [Header("Hands")]
-    [Tooltip("The user's dominant hand. The other hand holds menus.")]
+    [Tooltip("The user's dominant hand. The other hand holds menus. Changing it in play mode moves everything across.")]
     [SerializeField] private Handedness dominant = Handedness.Right;
+
+    public event Action Changed;
 
     // runtime values
     public static UserHandedness Instance { get; private set; }
-    public Handedness Dominant => dominant;
     public Handedness OffHand => dominant == Handedness.Right ? Handedness.Left : Handedness.Right;
+
+    public Handedness Dominant
+    {
+        get => dominant;
+        set
+        {
+            if (dominant == value) return;
+            dominant = value;
+            Changed?.Invoke();
+        }
+    }
 
     private void Awake()
     {
@@ -24,5 +37,11 @@ public class UserHandedness : MonoBehaviour
     private void OnDestroy()
     {
         if (Instance == this) Instance = null;
+    }
+
+    // Lets the Inspector field swap hands while playing.
+    private void OnValidate()
+    {
+        if (Application.isPlaying && Instance == this) Changed?.Invoke();
     }
 }

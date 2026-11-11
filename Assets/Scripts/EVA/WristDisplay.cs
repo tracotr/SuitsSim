@@ -2,17 +2,19 @@ using UnityEngine;
 using UnityEngine.XR.Hands;
 using UnityEngine.XR.Hands.Samples.GestureSample;
 
-public class WristDisplay: MonoBehaviour
+// Panels on the back of the off hand's wrist, shown while the wrist gesture is held.
+public class WristDisplay : MonoBehaviour
 {
+    [Header("Panels")]
+    [Tooltip("HandSide on this object, set to the off hand.")]
+    [SerializeField] private HandSide handSide;
+
     [SerializeField] private Transform panels;
     [Tooltip("Turn around the wrist bone's Z in degrees for the left hand. The right hand uses the negative of this.")]
     [SerializeField] private float panelRotation = 80;
 
     [SerializeField] private XRHandTrackingEvents leftHand;
     [SerializeField] private XRHandTrackingEvents rightHand;
-
-    [SerializeField] private Transform leftWrist;
-    [SerializeField] private Transform rightWrist;
 
     [SerializeField] private StaticHandGesture wristGesture;
 
@@ -21,15 +23,25 @@ public class WristDisplay: MonoBehaviour
     [SerializeField] private float freezeDistance = 0.2f;
 
     [Tooltip("How long the panels stay up after the gesture ends, in seconds, so a tracking dropout doesn't hide them.")]
-    [SerializeField] private float hideDelay = 0.5f;
+    [SerializeField] private float hideDelay = 0.15f;
 
     // runtime values
-    private Transform _reachingWrist;
     private Vector3 _panelsLocalPosition;
     private Quaternion _panelsLocalRotation;
     private bool _gestureHeld;
     private bool _frozen;
     private float _hideAt;
+
+    private void Awake()
+    {
+        handSide.HandChanged += OnHandChanged;
+
+        // The panels start hidden since the gesture controls them.
+        panels.gameObject.SetActive(false);
+        panels.GetLocalPositionAndRotation(out _panelsLocalPosition, out _panelsLocalRotation);
+    }
+
+    private void OnDestroy() => handSide.HandChanged -= OnHandChanged;
 
     private void OnEnable()
     {
@@ -43,24 +55,18 @@ public class WristDisplay: MonoBehaviour
         wristGesture.gestureEnded.RemoveListener(OnGestureEnded);
     }
 
-    private void Start()
+    // The hands are mirrored so the right hand turns the other way. The gesture only picks up its hand in OnEnable so it gets toggled.
+    private void OnHandChanged(Handedness hand)
     {
-        // default set our panels off since they are controlled by our gesture.
+        bool left = hand == Handedness.Left;
+        if (_frozen) SetFrozen(false);
+        _gestureHeld = false;
         panels.gameObject.SetActive(false);
-        panels.GetLocalPositionAndRotation(out _panelsLocalPosition, out _panelsLocalRotation);
 
-        // Determine which hand/wrist we want to use based on our users handedness
-        bool left = UserHandedness.Instance.OffHand == Handedness.Left;
-        var hand = left ? leftHand : rightHand;
-        var wrist = left ? leftWrist : rightWrist;
-        _reachingWrist = left ? rightWrist : leftWrist;
-
-        // Set our transform parent and local position to wrist, the hands are mirrored so the right hand turns the other way.
-        transform.SetParent(wrist, false);
         transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.Euler(0f, 0f, left ? panelRotation : -panelRotation));
 
-        // tell our wrist gesture to look at the specific hand.
-        wristGesture.handTrackingEvents = hand;
+        wristGesture.enabled = false;
+        wristGesture.handTrackingEvents = left ? leftHand : rightHand;
         wristGesture.enabled = true;
     }
 
@@ -69,7 +75,7 @@ public class WristDisplay: MonoBehaviour
     {
         if (!panels.gameObject.activeSelf) return;
 
-        bool reaching = Vector3.Distance(_reachingWrist.position, panels.position) < freezeDistance;
+        bool reaching = Vector3.Distance(handSide.OtherHand.position, panels.position) < freezeDistance;
         if (reaching != _frozen) SetFrozen(reaching);
 
         if (!_gestureHeld && !_frozen && Time.time >= _hideAt) panels.gameObject.SetActive(false);

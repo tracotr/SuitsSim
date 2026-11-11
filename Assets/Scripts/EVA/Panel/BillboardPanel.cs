@@ -20,12 +20,22 @@ public class BillboardPanel : MonoBehaviour
         _head = Camera.main.transform;
     }
 
+    // Starts already facing the head so the panel doesn't swing round each time it's shown.
+    private void OnEnable()
+    {
+        if (TryGetFacing(out var facing)) transform.rotation = facing;
+    }
+
     private void LateUpdate()
     {
-        if (grab.isSelected) return;
-        var away = transform.position - _head.position;
-        if (away.sqrMagnitude < 0.0001f) return;
-        var facing = Quaternion.LookRotation(away, _head.up);
+        if (grab.isSelected || !TryGetFacing(out var facing)) return;
         transform.rotation = Quaternion.Slerp(transform.rotation, facing, 1f - Mathf.Exp(-turnSpeed * Time.deltaTime));
+    }
+
+    private bool TryGetFacing(out Quaternion facing)
+    {
+        var away = transform.position - _head.position;
+        facing = away.sqrMagnitude < 0.0001f ? transform.rotation : Quaternion.LookRotation(away, _head.up);
+        return away.sqrMagnitude >= 0.0001f;
     }
 }

@@ -52,11 +52,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DCUChestMount
   head: {fileID: 0}
-  offset: {x: 0, y: -0.35, z: 0.25}
-  deadZone: 20
-  turnSpeed: 4
+  offset: {x: 0.075, y: -0.5, z: 0}
+  deadZone: 50
+  turnSpeed: 4.5
   followSpeed: 10
-  DcuRotation: -90
+  dcuRotationOffset: -90
 --- !u!1001 &20133200264852699
 PrefabInstance:
   m_ObjectHideFlags: 0

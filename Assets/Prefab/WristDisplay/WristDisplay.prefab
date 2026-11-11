@@ -44,6 +44,7 @@ GameObject:
   - component: {fileID: 1400000000000000002}
   - component: {fileID: 135325214669095264}
   - component: {fileID: 517760172808385466}
+  - component: {fileID: 1400000000000000009}
   m_Layer: 6
   m_Name: WristDisplay
   m_TagString: Untagged
@@ -91,9 +92,24 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_MinimumHoldTime: 0.1
-  m_GestureDetectionInterval: 0.1
+  m_GestureDetectionInterval: 0.05
   m_StaticGestures: []
   m_Highlight: {fileID: 0}
+--- !u!114 &1400000000000000009
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1400000000000000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 95ed1d5ea5b0487d90f5ebb5d346c060, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HandSide
+  offHand: 1
+  left: {fileID: 0}
+  right: {fileID: 0}
 --- !u!114 &517760172808385466
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -105,14 +121,15 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 92cf6b0372bec13409be7e09cd194563, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::WristVisibility
+  m_EditorClassIdentifier: Assembly-CSharp::WristDisplay
+  handSide: {fileID: 1400000000000000009}
   panels: {fileID: 3501733871285573077}
   panelRotation: 80
   leftHand: {fileID: 0}
   rightHand: {fileID: 0}
-  leftWrist: {fileID: 0}
-  rightWrist: {fileID: 0}
   wristGesture: {fileID: 135325214669095264}
+  freezeDistance: 0.2
+  hideDelay: 0.15
 --- !u!1 &6149115893606780819
 GameObject:
   m_ObjectHideFlags: 0
