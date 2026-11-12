@@ -25,6 +25,9 @@ public enum TssSwitch
     [InspectorName("DCU/EVA 1/Fan")] DcuEva1Fan,
     [InspectorName("DCU/EVA 1/Pump")] DcuEva1Pump,
     [InspectorName("DCU/EVA 1/CO2")] DcuEva1Co2,
+
+    // Not a real TSS switch. It stands in for plugging the umbilical in, so egress and ingress can check it. Kept last so saved switch numbers don't shift.
+    [InspectorName("UIA/EVA 1/Umbilical")] UiaEva1Umbilical,
 }
 
 public enum TssError
@@ -55,6 +58,7 @@ public class TssSim : MonoBehaviour
     public event Action Ticked;
     public event Action<TssSwitch, bool> SwitchChanged;
     public event Action<TssErrorFlag, bool> ErrorChanged;
+    public event Action<bool> RunningChanged;
 
     // runtime values
     public static TssSim Instance { get; private set; }
@@ -128,12 +132,19 @@ public class TssSim : MonoBehaviour
         Heading = heading;
     }
 
-    public void StartEva() => Running = true;
+    public void StartEva() => SetRunning(true);
+
+    private void SetRunning(bool running)
+    {
+        if (Running == running) return;
+        Running = running;
+        RunningChanged?.Invoke(running);
+    }
 
     // Stops the EVA and puts telemetry back to its starting values, switches are kept.
     public void ResetEva()
     {
-        Running = false;
+        SetRunning(false);
         _simTime = 0;
         CurrentError = TssError.None;
         Eva1.ResetValues();

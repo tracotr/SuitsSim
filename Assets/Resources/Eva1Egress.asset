@@ -17,7 +17,9 @@ MonoBehaviour:
   steps:
   - header: Connect UIA to DCU and Start Depress
     text: Verify umbilical connection from UIA to DCU
-    switchRequirements: []
+    switchRequirements:
+    - requiredSwitch: 16
+      state: 0
     valueRequirements: []
   - header: Connect UIA to DCU and Start Depress
     text: "UIA: EV-1 EMU PWR \u2013 ON"
@@ -201,7 +203,9 @@ MonoBehaviour:
     requireConfirm: 1
   - header: End Depress, Check Switches and Disconnect
     text: Disconnect UIA and DCU umbilical
-    switchRequirements: []
+    switchRequirements:
+    - requiredSwitch: 16
+      state: 1
     valueRequirements: []
   - header: End Depress, Check Switches and Disconnect
     text: Verbally announce completion of egress
